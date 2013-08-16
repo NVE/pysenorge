@@ -6,4 +6,6 @@ from wind_10_daily import model
 
 model(1,1)
 
+test="neue Zeile"
+
 #Änderung Kommentar
