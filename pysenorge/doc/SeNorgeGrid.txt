@@ -1,0 +1,21 @@
+Beskrivelse SeNorge grid
+
+1550x1195 km  -> 1852250 km2
+
+Binære filer der første verdi er i øverste venstre hjørne (nordvest) og går deretter østover 1195 verdier før man starter på neste "rad" 1 km lenger syd.
+
+Siste verdi er således i det nederste høyre hjørne (sørøst)
+
+Posisjoneringen av griddet er i Utm 33N koordinater:
+
+LowerLeftEast -75000
+LowerLeftNorth 6450000
+
+UpperRightEast 1120000
+UpperRightNorth 8000000
+
+(De binære verdiene er på f.eks. to byte, 16bit, unsigned integer verdier. F.eks. vil sd og swe være angitt i mm snø eller vann. En verdi på 240 er derfor 24 cm snø.
+
+Verdien 0 angir barmark. Verdien 65535 angir at det ikke er beregnet noen verdi for denne kvadratkilometerruta.
+
+I de fleste tilfeller fordi det definerte maska av fastlands Norge med øyer. Men det kan hende det ikke er interpolert verdier i punktet også.)
