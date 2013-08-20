@@ -40,6 +40,7 @@ def senorge_grid(meshed=False):
     y = arange(LowerLeftNorth, UpperRightNorth, dy)
     
     if meshed:
+        #Converts vector into coordinate system
         xgrid, ygrid = meshgrid(x, y)
         p = Proj('+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs')
         lon, lat = p(xgrid, ygrid, inverse=True)
@@ -70,8 +71,7 @@ def senorge_mask(show=False):
             print '''Required plotting module "matplotlib" not found!\nVisit www.matplotlib.sf.net'''
     
     return mask
-    
-    
+        
 def met_grid(ncfile, meshed=False):
     from netCDF4 import Dataset
     '''
@@ -94,7 +94,6 @@ def met_grid(ncfile, meshed=False):
     else: 
         return x, y
     
-
 def crop_overlap(xin, yin, zin):
     '''
     Crops the input grid to the seNorge grid.
@@ -114,7 +113,6 @@ def crop_overlap(xin, yin, zin):
     yinm = yin[ymin_ndx:ymax_ndx+1]
     zinm = zin[ymin_ndx:ymax_ndx+1, xmin_ndx:xmax_ndx+1]
     return xinm, yinm, zinm
-    
 
 def _view_grid_overlay():
     """
@@ -169,12 +167,12 @@ def _view_grid_overlay():
 ###############################################################################
 ### These functions are from matplotlib.cbook by Jeffrey Whitaker #############
 ###############################################################################
+
 def iterable(obj):
     'return true if *obj* is iterable'
     try: len(obj)
     except: return False
     return True
-
 
 def is_string_like(obj):
     'Return True if *obj* looks like a string'
@@ -188,7 +186,6 @@ def is_string_like(obj):
     try: obj + ''
     except: return False
     return True
-
 
 def is_scalar(obj):
     'return true if *obj* is not string like and is not iterable'
@@ -344,25 +341,57 @@ def interpolate(xold, yold, zold):
     Convenience function for interpolating the UM4 grid to the seNorge grid. 
     """
 #    print xold.shape, yold.shape, zold.shape
+
     xcrop, ycrop, zcrop = crop_overlap(xold, yold, zold)
+    xcrop, ycrop, zcrop = xold, yold, zold
 #    print xcrop.shape, ycrop.shape, zcrop.shape
 #    print xcrop[0], xcrop[-1], ycrop[0], ycrop[-1]
     xnew, ynew, lon, lat = senorge_grid(meshed=True) #@UnusedVariable
+    
     znew = interp(zcrop, xcrop, ycrop, xnew, ynew, checkbounds=True, masked=False, order=0)
-#    print xnew.shape, ynew.shape, znew.shape
+    
+#     new_znew=zold
+#     
+#     print type(new_znew)
+#     print type(znew)
+#     
+#     print new_znew.shape 
+#     print znew.shape 
+#     
+#     print new_znew[100,100]
+#     print znew[100,100]
+
+    znew = zold
+    
+#   print xnew.shape, ynew.shape, znew.shape
     mask = np.flipud(np.load(os.path.join(pysenorgedir, 'resources/norway_mask.npy')))
     znew[mask]  = nan
-#    from pylab import figure, imshow, show
-#    imshow(znew)
-#    figure()
-#    imshow(zcrop)
-#    figure()
-#    imshow(zold)
-#    show()
+#   from pylab import figure, imshow, show
+#   imshow(znew)
+#   figure()
+#   imshow(zcrop)
+#   figure()
+#   imshow(zold)
+#   show()
+    
+    return znew
+
+
+def interpolate_new(zold):
+    """
+    Old declaration:Convenience function for interpolating the UM4 grid to the seNorge grid.
+    After change to Arome Modell no need to interpolate and breaking down of the inputgrid
+    """
+    xnew, ynew, lon, lat = senorge_grid(meshed=True) #@UnusedVariable
+    
+    znew = zold
+    
+    mask = np.flipud(np.load(os.path.join(pysenorgedir, 'resources/norway_mask.npy')))
+    
+    znew[mask]  = nan
     
     return znew
     
-
 if __name__ == '__main__':
 #    x, y, lon, lat = senorge_grid(True)
 #    print lon.shape

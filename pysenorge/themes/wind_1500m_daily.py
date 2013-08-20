@@ -1,28 +1,54 @@
-#! /usr/bin/python
 # -*- coding:iso-8859-10 -*-
-__docformat__ = 'reStructuredtext'
+from numpy.core.numeric import nan
+__docformat__ = 'reStructuredText'
 '''
+Calculates the average wind velocity based on hourly wind vector data.
+
+A netcdf file with hourly data from 07:00 to 06:00 UTC serves as data source.
+The amplitude of the hourly wind vectors is calculated for each cell. 
+The amplitudes are then averaged over 24h. The result is interpolated from the 
+4 km UM grid to the 1 km seNorge grid.
+
+ 
+English name for theme: Average windspeed last 24h\n
+Norsk navn for temalaget: Gjennomsnittlig vindhastighet siste dogn
+
+Command line usage:
+===================
+    python //~/pysenorge/themes/wind 10m_daily.py YYYY-MM-DD [options]
+    
+Daily production usage:
+=======================
+    python //~/pysenorge/themes/wind 10m_daily.py YYYY-MM-DD --no-bil --nc 
+    -t [7,31]
+
+*Todo:*
+- Make a test that checks that the 3-D matrix is multiplied correctly.
+- Add a theme showing max wind gust last 24 h.
+- Add a theme showing prevailing wind direction last 24 h.
+
+- Make dependent on wind direction. Read wind direction - determine 
+    predominant wind direction - calculated average wind speed in predominant 
+    wind direction (avg all wind speed might give false alarm). Wind directions 
+    can be classified in either 4 or 8 regions (90 or 45 degrees).
+
 
 :Author: kmu
-:Date: 18. aug. 2010
-
-**Changed:**
-    - Added a test that checks that the 3-D matrix is multiplied correctly.
-    - Added a theme showing max wind gust last 24 h.
-    - Added a theme showing prevailing wind direction last 24 h.
+:Created: 28. jan. 2011
 '''
 
 ''' IMPORTS '''
+#---------------------------------------------------------    
 # Built-in
+#---------------------------------------------------------    
 import os, time
 import math
 from datetime import timedelta
 from optparse import OptionParser
 
-# Adds folder containing the "pysenorge" package to the PYTHONPATH
-execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))  
-
-# Additional
+#---------------------------------------------------------    
+# Additional modules
+#---------------------------------------------------------    
 try:
     from netCDF4 import Dataset
 except ImportError:
@@ -33,36 +59,32 @@ except ImportError:
         Please install for netCDF file support.'''
 from numpy import sqrt, mean, flipud, zeros_like, arctan2, zeros, uint16
 
-# Own
-from pysenorge.set_environment import netCDFin, BILout, \
-                                      FloatFillValue, UintFillValue
+execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
+
+#---------------------------------------------------------    
+# Own modules
+#---------------------------------------------------------    
+from pysenorge.set_environment import netCDFin, BILout, FloatFillValue, \
+                                      UintFillValue
 from pysenorge.io.bil import BILdata
 from pysenorge.io.nc import NCdata
 from pysenorge.io.png import writePNG
 from pysenorge.tools.date_converters import iso2datetime, datetime2BILdate, get_hydroyear
 from pysenorge.converters import nan2fill
-from pysenorge.grid import interpolate
+from pysenorge.grid import interpolate_new
 from pysenorge.functions.lamberts_formula import LambertsFormula
 
-
+#---------------------------------------------------------    
+#Define windmodel
+#---------------------------------------------------------    
 def model(x_wind, y_wind):
     """
-    Calculates the average and maximum wind speed and the prevailing wind direction
-    based on hourly wind vector data from the NWP model *Unified Model* (4 km).
-    
-    A netcdf file with hourly data from 07:00 to 06:00 UTC serves as data source.
-    The amplitude of the hourly wind vectors is calculated for each cell. 
-    The amplitudes are then averaged over 24h. The result is interpolated from the 
-    4 km UM grid to the 1 km seNorge grid.
-    
-    **ToDo:**    
-        - Make dependent on wind direction. Read wind direction - determine predominant wind direction - calculated average wind speed in predominant  wind direction (avg all wind speed might give false alarm). Wind directions can be classified in either 4 or 8 regions (90 or 45 degrees).
-        - Path to .clt files is hard-coded.
-    
-    
+    Calculates avg. and max. wind speed and prevailing wind direction from the
+    x and y vector components.
+      
     :Parameters:
-        - x_wind: Wind vector component in *x*-direction (UM4)
-        - y_wind: Wind vector component in *y*-direction (UM4)
+        - x_wind: Wind vector component in *x*-direction
+        - y_wind: Wind vector component in *y*-direction
     """    
     total_wind = sqrt(x_wind**2 + y_wind**2)
     dims = total_wind.shape
@@ -70,88 +92,73 @@ def model(x_wind, y_wind):
     max_wind = zeros_like(total_wind_avg)
     wind_dir_cat = zeros_like(total_wind_avg)
     wind_dir = arctan2(y_wind, x_wind)
-    
+      
+    print "Wind-data dimensions:", dims
+    li_wind=[]
     for i in xrange(dims[1]):
         for j in xrange(dims[2]):
             max_wind[i][j] = total_wind[:,i,j].max()
-            # Init compass direction counters
-            N = 0
-            NE = 0
-            E =0
-            SE = 0
-            S = 0
-            SW = 0
-            W = 0
-            NW = 0
             for k in xrange(dims[0]):
-                alpha = wind_dir[k,i,j]
-                degalpha = math.degrees(alpha)
-                
-                # Translate to cardinal wind direction from which wind originates.
-                # Arrow at 0 degree points towards east.
-                if degalpha >= 0.0:
-                    if degalpha >=0.0 and degalpha<22.5:
-                        W += 1 
-                    elif degalpha >=22.5 and degalpha<67.5:
-                        SW += 1
-                    elif degalpha >=67.5 and degalpha<112.5:
-                        S += 1
-                    elif degalpha >=112.5 and degalpha<157.5:
-                        SE += 1
-                    elif degalpha >=157.5 and degalpha<=180.0:
-                        E += 1 
-                if degalpha < 0.0:
-                    if degalpha <0.0 and degalpha>=-22.5:
-                        W += 1
-                    elif degalpha <-22.5 and degalpha>=-67.5:
-                        NW += 1
-                    elif degalpha <-67.5 and degalpha>=-112.5:
-                        N += 1
-                    elif degalpha <-112.5 and degalpha>=-157.5:
-                        NE += 1
-                    elif degalpha <-157.5 and degalpha>=-180.0:
-                        E += 1
-                        
-            wind_dir_cat[i][j] = LambertsFormula(N, NE, E, SE, S, SW, W, NW)
-                        
+                degalpha = math.degrees(wind_dir[k,i,j])
+                if degalpha != nan:
+                    ob_var={-22.5<=degalpha<22.5:"W",
+                        22.5<=degalpha<67.5:"SW",
+                        67.5<=degalpha<112.5:"S" ,
+                        112.5<=degalpha<157.5:"SE",
+                        157.5<=degalpha<180:"E",
+                        -22.5>=degalpha>-67.5:"NW",
+                        -67.5>=degalpha>-112.5:"N" ,
+                        -112.5>=degalpha>-157.5:"NE",
+                        -157.5>=degalpha>-180:"E",
+                        }[1]
+                    li_wind.append(ob_var)    
+             
+    wind_directions=[li_wind.count("N"),li_wind.count("NE"),
+                     li_wind.count("E"),li_wind.count("SE"),
+                     li_wind.count("S"),li_wind.count("SW"),
+                     li_wind.count("W"),li_wind.count("NW")]
+  
+    wind_dir_cat[i][j] = LambertsFormula(*wind_directions)
     return total_wind_avg, max_wind, wind_dir_cat
 
-
+#---------------------------------------------------------    
+#Start main program
+#---------------------------------------------------------    
 def main():
-    '''
+    """
     Loads and verifies input data, calls the model, and controls the output stream. 
     
     Command line usage::
     
-        python //~HOME/pysenorge/themes/wind_1500m_daily.py YYYY-MM-DD [options]
-    '''
+        python //~HOME/pysenorge/themes/wind_10m_daily.py YYYY-MM-DD [options]
+    """
     # Theme variables
-    themedir = 'wind_direction_1500m'
+    themedir1 = 'wind_speed_avg_10m'
+    themedir2 = 'wind_speed_max_10m'
     
     # Setup input parser
-    usage = "usage: python //~HOME/pysenorge/themes/wind_1500m_daily.py YYYY-MM-DD [options]"
-    
+    usage = "usage: python //~HOME/pysenorge/theme_layers/average_windspeed_daily.py YYYY-MM-DD [options]"
+
+#---------------------------------------------------------
+#add options with parser module
+#---------------------------------------------------------    
     parser = OptionParser(usage=usage)
-    parser.add_option("-o", "--outdir", 
-                      action="store", dest="outdir", type="string",
-                      default=os.path.join(BILout, themedir),
-                      help="Output directory for netCDF file - default: $netCDFout/%s/$YEAR" % themedir)
     parser.add_option("-t", "--timerange", 
                       action="store", dest="timerange", type="string",
-                      default="[2,8]",
+                      default="[7,31]",
                       help='''Time-range as "[6,30]"''')
     parser.add_option("--no-bil",
-                      action="store_false", dest="bil", default=True,
-                      help="Set to suppress output in BIL format")
+                  action="store_false", dest="bil", default=True,
+                  help="Set to suppress output in BIL format")
     parser.add_option("--nc",
-                      action="store_true", dest="nc", default=False,
-                      help="Set to store output in netCDF format")
+                  action="store_true", dest="nc", default=False,
+                  help="Set to store output in netCDF format")
     parser.add_option("--png",
-                      action="store_true", dest="png", default=False,
-                      help="Set to store output as PNG image")
+                  action="store_true", dest="png", default=False,
+                  help="Set to store output as PNG image")
     
-    # Comment to suppress help
-#    parser.print_help()
+#   Comment to suppress help
+#   parser.print_help()
 
     (options, args) = parser.parse_args()
     
@@ -161,26 +168,23 @@ def main():
         parser.print_help() 
     
     # get current datetime
-    
-    #############
-    
-    
-    ### different for prognosis files
-    ### date corresponds to start, not end as in my convention
-    
-    
-    #############
     cdt = iso2datetime(args[0]+" 06:00:00")
-    ncfilename = "UM4_ml00_%s.nc" % datetime2BILdate(cdt-timedelta(days=1)) # e.g. UM4_ml_2010_11_28.nc
-    
+    ncfilename = "UM4_sf00_%s.nc" % datetime2BILdate(cdt-timedelta(days=1))
     if len(args) != 1:
         parser.error("Please provide an input file!")
     else:
         # Add full path to the filename
-        ncfile = os.path.join(netCDFin, str(cdt.year), ncfilename)
+        #-----------------------------------------------------------------------
+        #CHANGE IN SOURCECODE
+        #ncfile = os.path.join(netCDFin, str(cdt.year), ncfilename)
+        ncfile = "/home/ralf/Dokumente/summerjob/data/AROME_WIND_850_06_NVE.nc"
     
-    timerange = eval(options.timerange)
+    #--------------------------------------------------------------
+    #CHANGE IN SOURCE CODE
+    #timerange = eval(options.timerange)
+    timerange = [0,23]
     
+    print 'Time-range', timerange
     if not os.path.exists(ncfile):
         parser.error("%s does not exist!" % ncfile)
     else:
@@ -188,21 +192,21 @@ def main():
             # Load wind data from prognosis (netCDF file) for entire time-range
             ds = Dataset(ncfile, 'r')
             wind_time = ds.variables['time'][:]
-            x_wind = ds.variables['x_wind_1500m'][:,:,:]
-            y_wind = ds.variables['y_wind_1500m'][:,:,:]
-            rlon = ds.variables['rlon'][:]
-            rlat = ds.variables['rlat'][:]
+            x_wind = ds.variables['x_wind_850hpa'][:,:,:]
+            y_wind = ds.variables['y_wind_850hpa'][:,:,:]
+#            rlon = ds.variables['x'][:]
+#            rlat = ds.variables['y'][:]
             ds.close()
         else:
             # Load wind data from prognosis (netCDF file) for selected time-range
             ds = Dataset(ncfile, 'r')
             wind_time = ds.variables['time'][timerange[0]:timerange[1]]
-            x_wind = ds.variables['x_wind_1500m'][timerange[0]:timerange[1],:,:]
-            y_wind = ds.variables['y_wind_1500m'][timerange[0]:timerange[1],:,:]
-            rlon = ds.variables['rlon'][:]
-            rlat = ds.variables['rlat'][:]
+            x_wind = ds.variables['x_wind_850hpa'][timerange[0]:timerange[1],:,:]
+            y_wind = ds.variables['y_wind_850hpa'][timerange[0]:timerange[1],:,:]
+#            rlon = ds.variables['x'][:]
+#            rlat = ds.variables['y'][:]
             ds.close()
-            
+    
 #    from netCDF4 import num2date
 #    for t in wind_time:
 #        print num2date(t, "seconds since 1970-01-01 00:00:00 +00:00")
@@ -210,109 +214,133 @@ def main():
     print "Using input data from file %s" % ncfilename
     
     # Setup outputs
+    _tstart = time.gmtime(wind_time[0])
     tstruct = time.gmtime(wind_time[-1]) # or -1 if it should be the average until that date
-    outfile = '%s_%s_%s_%s' % (themedir, str(tstruct.tm_year).zfill(4),
+    print "For the period %s-%s-%s:%s - %s-%s-%s:%s" % (str(_tstart.tm_year).zfill(4),
+                               str(_tstart.tm_mon).zfill(2),
+                               str(_tstart.tm_mday).zfill(2),
+                               str(_tstart.tm_hour).zfill(2),
+                               str(tstruct.tm_year).zfill(4),
+                               str(tstruct.tm_mon).zfill(2),
+                               str(tstruct.tm_mday).zfill(2),
+                               str(tstruct.tm_hour).zfill(2))
+    outfile1 = '%s_%s_%s_%s' % (themedir1, str(tstruct.tm_year).zfill(4),
+                               str(tstruct.tm_mon).zfill(2),
+                               str(tstruct.tm_mday).zfill(2))
+    outfile2 = '%s_%s_%s_%s' % (themedir2, str(tstruct.tm_year).zfill(4),
                                str(tstruct.tm_mon).zfill(2),
                                str(tstruct.tm_mday).zfill(2))
     
-    outdir = os.path.join(options.outdir, str(get_hydroyear(cdt)))
-    if not os.path.exists(outdir):
-        if not os.path.exists(options.outdir):
+    outdir1 = os.path.join(BILout, themedir1, str(get_hydroyear(cdt)))
+    if not os.path.exists(outdir1):
+        if not os.path.exists(os.path.join(BILout, themedir1)):
             os.chdir(BILout)
-            os.system('mkdir %s' % themedir)
-        os.chdir(options.outdir)
+            os.system('mkdir %s' % themedir1)
+        os.chdir(os.path.join(BILout, themedir1))
         os.system('mkdir %s' % str(get_hydroyear(cdt)))
+
+    outdir2 = os.path.join(BILout, themedir2, str(get_hydroyear(cdt)))
+    if not os.path.exists(outdir2):
+        if not os.path.exists(os.path.join(BILout, themedir2)):
+            os.chdir(BILout)
+            os.system('mkdir %s' % themedir2)
+        os.chdir(os.path.join(BILout, themedir2))
+        os.system('mkydir %s' % str(get_hydroyear(cdt)))
+
+#---------------------------------------------------------
+#Clip wind data to SEnorge grid 
+#---------------------------------------------------------    
 
     # Calculate the wind speed vector - using model()
     total_wind_avg, max_wind, wind_dir = model(x_wind, y_wind)
     
     # interpolate total average wind speed to seNorge grid
-    total_wind_avg_intp = interpolate(rlon, rlat, total_wind_avg)
-    max_wind_intp = interpolate(rlon, rlat, max_wind)
-    wind_dir_intp = interpolate(rlon, rlat, wind_dir)
-    
+    total_wind_avg_intp = interpolate_new(total_wind_avg)
+    max_wind_intp = interpolate_new(max_wind)
+    wind_dir_intp = interpolate_new(wind_dir)
     
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
     max_wind_intp = nan2fill(max_wind_intp)
     wind_dir_intp = nan2fill(wind_dir_intp)
-    
+
+#---------------------------------------------------------
+#Option --bil
+#---------------------------------------------------------    
     if options.bil:
         from pysenorge.grid import senorge_mask
         
         mask = senorge_mask()
         
         # Write to BIL file
-#        dtstr = datetime2BILdate(cdt)
         
-#        # avg wind
-#        bil_avg_wind = flipud(uint16(total_wind_avg_intp*10.0))
-#        bil_avg_wind[mask] = UintFillValue
-#        bilfile = BILdata(os.path.join(BILout, themedir,
-#                          'avg_wind_speed'+'_'+dtstr+'.bil'),
-#                          datatype='uint16')
-#        biltext = bilfile.write(bil_avg_wind.flatten())
-#        print biltext
-#        
-#        #  max wind
-#        bil_max_wind = flipud(uint16(max_wind_intp*10.0))
-#        bil_max_wind[mask] = UintFillValue
-#        bilfile = BILdata(os.path.join(BILout, themedir,
-#                          'max_wind_speed'+'_'+dtstr+'.bil'),
-#                          datatype='uint16')
-#        biltext = bilfile.write(bil_max_wind.flatten())
-#        print biltext
+        # avg wind
+        bil_avg_wind = flipud(uint16(total_wind_avg_intp*10.0))
+        bil_avg_wind[mask] = UintFillValue
         
-        # wind direction
-        bil_dir_wind = flipud(uint16(wind_dir_intp))
-        bil_dir_wind[mask] = UintFillValue
-        bilfile = BILdata(os.path.join(outdir,
-#                          'wind_direction_1500m'+'_'+dtstr+'.bil'),
-                          outfile+'.bil'),
+        bilfile = BILdata(os.path.join(outdir1,
+                          outfile1+'.bil'),
                           datatype='uint16')
-        biltext = bilfile.write(bil_dir_wind.flatten())
+        biltext = bilfile.write(bil_avg_wind.flatten()) # collapsed into one dimension
         print biltext
-    
+        
+        #  max wind
+        bil_max_wind = flipud(uint16(max_wind_intp*10.0))
+        bil_max_wind[mask] = UintFillValue
+        bilfile = BILdata(os.path.join(outdir2,
+                          outfile2+'.bil'),
+                          datatype='uint16')
+        biltext = bilfile.write(bil_max_wind.flatten())
+        print biltext
+
+#---------------------------------------------------------
+#Option --nc write a nc file
+#---------------------------------------------------------    
     if options.nc:
-        # Write to NC file
-        ncfile = NCdata(os.path.join(outdir, outfile+'.nc'))
-#        ncfile.rootgrp.info = themename
+        ncfile = NCdata(os.path.join(outdir1, outfile1+'.nc'))
+
         ncfile.new(wind_time[-1])
         
         ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str, "m s-1",
                             'Average wind speed last 24h', total_wind_avg_intp)
         ncfile.add_variable('max_wind_speed', max_wind.dtype.str, "m s-1",
                             'Maximum wind gust last 24h', max_wind_intp)
-        ncfile.add_variable('wind_direction_1500m', wind_dir.dtype.str,
+        ncfile.add_variable('wind_direction', wind_dir.dtype.str,
                             "cardinal direction",
                             'Prevailing wind direction last 24h', wind_dir_intp)
         ncfile.close()
-        
+
+#---------------------------------------------------------
+#Option --png
+#---------------------------------------------------------    
     if options.png:
         # Write to PNG file
-        dtstr = datetime2BILdate(cdt)
-        writePNG(total_wind_avg_intp[0,:,:],
-                 os.path.join(outdir, 'avg_wind_speed'+'_'+dtstr),
-                 cltfile=r"Z:\tmp\wind_1500m_daily\avg_wind_speed_1500_no.clt"
+        #----------------------------------------------------
+        #null inside index removed
+        writePNG(total_wind_avg_intp[:,:],
+                os.path.join(outdir1, outfile1),
+                 cltfile=r"/home/ralf/Dokumente/summerjob/windmodel/data/avg_wind_speed_10_no.clt"
                  )
-        writePNG(max_wind_intp[0,:,:],
-                 os.path.join(outdir, 'max_wind_speed'+'_'+dtstr),
-                 cltfile=r"Z:\tmp\wind_1500m_daily\max_wind_speed_1500_no.clt"
+        
+        #null inside index removed
+        writePNG(max_wind_intp[:,:],
+                 os.path.join(outdir2, outfile2),
+                 cltfile=r"/home/ralf/Dokumente/summerjob/windmodel/data/max_wind_speed_10_no.clt"
                  )
-        writePNG(wind_dir_intp[0,:,:],
-                 os.path.join(outdir, 'wind_direction'+'_'+dtstr),
-                 cltfile=r"Z:\tmp\wind_1500m_daily\wind_direction_1500_no.clt"
-                 )
+#        writePNG(wind_dir_intp[0,:,:],
+#                 os.path.join(outdir, 'wind_direction'+'_'+dt),
+#                 cltfile=r"Z:\tmp\wind_10m_daily\wind_direction_10_no.clt"
+#                 )
     
-    # At last - cross fingers it all worked out!
+    # At last - cross fingers it all worked out! 
     print "\n*** Finished successfully ***\n"
 
 
-def clt_avg_wind_speed_no():
+def __clt_avg_wind_speed_no():
     from pysenorge.io.png import CLT, HDR, CLTitem
-    hdr = HDR(UintFillValue, 16,
+    hdr = HDR(255, 8,
               'Gjennomsnittlig vindhastighet',
-              'Gjennomsnittlig vindhastighet i 1500 m høyde',
+              'Gjennomsnittlig vindhastighet i 10 m hï¿½yde',
               'Vindstyrke')
     cltlist = [CLTitem(36.7, 300.0, (255,74,74), 'Orkan (over 32,6 m/s)'),
                CLTitem(28.5, 32.6, (126, 0, 255), 'Sterk storm (28,5-32,6 m/s)'),
@@ -329,43 +357,82 @@ def clt_avg_wind_speed_no():
     
     cltfile = CLT()
     cltfile.new(hdr, cltlist)
-    cltfile.write(r"Z:\tmp\wind_1500m_daily\avg_wind_speed_1500_no.clt")
+    cltfile.write(r"Z:\tmp\wind_10m_daily\avg_wind_speed_10_no.clt")
     
     
-def clt_max_wind_speed_no():
+def __clt_max_wind_speed_no():
     from pysenorge.io.png import CLT, HDR, CLTitem
-    hdr = HDR(UintFillValue, 16,
+    hdr = HDR(255, 8,
               'Maksimal vindhastighet',
-              'Maksimal vindhastighet i 1500 m høyde',
+              'Maksimal vindhastighet i 10 m hï¿½yde',
               'Vindstyrke')
-    cltlist = [CLTitem(36.7, 300.0, (255,74,74), 'Orkan (over 32,6 m/s)'),
-               CLTitem(28.5, 32.6, (126, 0, 255), 'Sterk storm (28,5-32,6 m/s)'),
-               CLTitem(24.5, 28.4, (255,194,74), 'Full storm (24,5-28,4 m/s)'),
-               CLTitem(20.8, 24.4, (255,255,74), 'Liten storm (20,8-24,4 m/s)'),
-               CLTitem(17.2, 20.7, (194,224,74), 'Sterk kuling (17,2-20,7 m/s)'),
-               CLTitem(13.9, 17.1, (134,194,74), 'Stiv kuling (13,9-17,1 m/s)'),
-               CLTitem(10.8, 13.7, (74,164,74), 'Liten kuling (10,8-13,7 m/s)'),
-               CLTitem(8.0, 10.7, (74,194,134), 'Frisk bris (8-10,7 m/s)'),
-               CLTitem(5.5, 7.9, (74,224,194), 'Laber bris (5,5-7,9 m/s)'),
-               CLTitem(3.4, 5.4, (74,255,255), 'Lett bris (3,4-5,4 m/s)'),
-               CLTitem(1.6, 3.3, (74,194,224), 'Svak vind (1,6-3,3 m/s)'),
+    # yr.no skala
+#    cltlist = [CLTitem(36.7, 300.0, (255,74,74), 'Orkan (over 32,6 m/s)'),
+#               CLTitem(28.5, 32.6, (126, 0, 255), 'Sterk storm (28,5-32,6 m/s)'),
+#               CLTitem(24.5, 28.4, (255,194,74), 'Full storm (24,5-28,4 m/s)'),
+#               CLTitem(20.8, 24.4, (255,255,74), 'Liten storm (20,8-24,4 m/s)'),
+#               CLTitem(17.2, 20.7, (194,224,74), 'Sterk kuling (17,2-20,7 m/s)'),
+#               CLTitem(13.9, 17.1, (134,194,74), 'Stiv kuling (13,9-17,1 m/s)'),
+#               CLTitem(10.8, 13.7, (74,164,74), 'Liten kuling (10,8-13,7 m/s)'),
+#               CLTitem(8.0, 10.7, (74,194,134), 'Frisk bris (8-10,7 m/s)'),
+#               CLTitem(5.5, 7.9, (74,224,194), 'Laber bris (5,5-7,9 m/s)'),
+#               CLTitem(3.4, 5.4, (74,255,255), 'Lett bris (3,4-5,4 m/s)'),
+#               CLTitem(1.6, 3.3, (74,194,224), 'Svak vind (1,6-3,3 m/s)'),
+#               CLTitem(300.1, FloatFillValue, (255, 255, 255), 'Ingen data')]
+    
+    cltlist = [CLTitem(36.7, 300.0, (80,0,153), 'Orkan (over 32,6 m/s)'),
+               CLTitem(28.5, 32.6, (80,13,243), 'Sterk storm (28,5-32,6 m/s)'),
+               CLTitem(24.5, 28.4, (205,13,243), 'Full storm (24,5-28,4 m/s)'),
+               CLTitem(20.8, 24.4, (243,13,186), 'Liten storm (20,8-24,4 m/s)'),
+               CLTitem(17.2, 20.7, (243,13,76), 'Sterk kuling (17,2-20,7 m/s)'),
+               CLTitem(13.9, 17.1, (243,66,13), 'Stiv kuling (13,9-17,1 m/s)'),
+               CLTitem(10.8, 13.7, (243,150,13), 'Liten kuling (10,8-13,7 m/s)'),
+               CLTitem(8.0, 10.7, (243,234,13), 'Frisk bris (8-10,7 m/s)'),
+               CLTitem(5.5, 7.9, (182,243,13), 'Laber bris (5,5-7,9 m/s)'),
+               CLTitem(3.4, 5.4, (48,243,13), 'Lett bris (3,4-5,4 m/s)'),
+               CLTitem(1.6, 3.3, (13,243,115), 'Svak vind (1,6-3,3 m/s)'),
+               CLTitem(0.0, 1.6, (174,174,174), 'Vindstille (<1,6 m/s)'),
                CLTitem(300.1, FloatFillValue, (255, 255, 255), 'Ingen data')]
     
     cltfile = CLT()
     cltfile.new(hdr, cltlist)
-    cltfile.write(r"Z:\tmp\wind_1500m_daily\max_wind_speed_1500_no.clt")
+    cltfile.write(r"Z:\tmp\wind_10m_daily\max_wind_speed_10_no.clt")
 
-
-def clt_wind_direction_no():
+def __clt_bil_max_wind_speed_no():
     from pysenorge.io.png import CLT, HDR, CLTitem
-    hdr = HDR(UintFillValue, 16,
+    hdr = HDR(255, 8,
+              'Maksimal vindhastighet',
+              'Maksimal vindhastighet i 10 m hï¿½yde',
+              'Vindstyrke')
+    
+    cltlist = [CLTitem(367, 3000, (80,0,153), 'Orkan (over 32,6 m/s)'),
+               CLTitem(285, 326, (80,13,243), 'Sterk storm (28,5-32,6 m/s)'),
+               CLTitem(245, 284, (205,13,243), 'Full storm (24,5-28,4 m/s)'),
+               CLTitem(208, 244, (243,13,186), 'Liten storm (20,8-24,4 m/s)'),
+               CLTitem(172, 207, (243,13,76), 'Sterk kuling (17,2-20,7 m/s)'),
+               CLTitem(139, 171, (243,66,13), 'Stiv kuling (13,9-17,1 m/s)'),
+               CLTitem(108, 137, (243,150,13), 'Liten kuling (10,8-13,7 m/s)'),
+               CLTitem(80, 107, (243,234,13), 'Frisk bris (8-10,7 m/s)'),
+               CLTitem(55, 79, (182,243,13), 'Laber bris (5,5-7,9 m/s)'),
+               CLTitem(34, 54, (100,224,121), 'Lett bris (3,4-5,4 m/s)'),
+               CLTitem(16, 33, (100,224,187), 'Svak vind (1,6-3,3 m/s)'),
+               CLTitem(0, 16, (174,174,174), 'Vindstille (<1,6 m/s)'),
+               CLTitem(3001, UintFillValue, (255, 255, 255), 'Ingen data')]
+    
+    cltfile = CLT()
+    cltfile.new(hdr, cltlist)
+    cltfile.write(r"Z:\snowsim\wind_speed_max_10m\wind_speed_max_10m_no_bil.clt")
+
+def __clt_wind_direction_no():
+    from pysenorge.io.png import CLT, HDR, CLTitem
+    hdr = HDR(255, 8,
               'Hovedvindretning',
-              'Hovedvindretning i 1500 m høyde',
+              'Hovedvindretning i 10 m hï¿½yde',
               'Himmelretning')
     cltlist = [CLTitem(0, 1, (0,0,255), 'N'),
-               CLTitem(1, 2, (126, 0, 255), 'NØ'),
-               CLTitem(2, 3, (255, 0, 215), 'Ø'),
-               CLTitem(3, 4, (255, 126, 0), 'SØ'),
+               CLTitem(1, 2, (126, 0, 255), 'Nï¿½'),
+               CLTitem(2, 3, (255, 0, 215), 'ï¿½'),
+               CLTitem(3, 4, (255, 126, 0), 'Sï¿½'),
                CLTitem(4, 5, (255, 0, 0), 'S'),
                CLTitem(5, 6, (255, 245, 0), 'SV'),
                CLTitem(6, 7, (0, 255, 0), 'V'),
@@ -374,51 +441,30 @@ def clt_wind_direction_no():
     
     cltfile = CLT()
     cltfile.new(hdr, cltlist)
-    cltfile.write(r"Z:\tmp\wind_1500m_daily\wind_direction_1500_no.clt")
+    cltfile.write(r"Z:\tmp\wind_10m_daily\wind_direction_10_no.clt")
 
-def clt_wind_direction_no_v2():
+
+def __clt_wind_direction_en():
     from pysenorge.io.png import CLT, HDR, CLTitem
-    hdr = HDR(UintFillValue, 16,
-              'Hovedvindretning siste døgn',
-              'Hovedvindretning i 1500 m høyde',
-              'Himmelretning')
-    cltlist = [CLTitem(0, 1, (0, 16, 165), 'N'),
-               CLTitem(1, 2, (0, 100, 181), 'NØ'),
-               CLTitem(2, 3, (15, 173, 0), 'Ø'),
-               CLTitem(3, 4, (140, 199, 0), 'SØ'),
-               CLTitem(4, 5, (255, 255, 20), 'S'),
-               CLTitem(5, 6, (255, 148, 0), 'SV'),
-               CLTitem(6, 7, (255, 40, 40), 'V'),
-               CLTitem(7, 8, (197, 0, 124), 'NV'),
-               CLTitem(8, UintFillValue, (255, 255, 255), 'Ingen data')]
-    
-    cltfile = CLT()
-    cltfile.new(hdr, cltlist)
-    cltfile.write(r"Z:\snowsim\wind_1500m_daily\wind_direction_1500_no.clt")
-
-
-def clt_wind_direction_en():
-    from pysenorge.io.png import CLT, HDR, CLTitem
-    hdr = HDR(UintFillValue, 16,
-              'Prevailing wind direction last 24h',
-              'Prevailing wind direction at 1500 m above ground',
+    hdr = HDR(255, 8,
+              'Prevailing wind direction',
+              'Prevailing wind direction at 10 m above ground',
               'Cardinal direction')
-    cltlist = [CLTitem(0, 1, (0, 16, 165), 'N'),
-               CLTitem(1, 2, (0, 100, 181), 'NE'),
-               CLTitem(2, 3, (15, 173, 0), 'E'),
-               CLTitem(3, 4, (140, 199, 0), 'SE'),
-               CLTitem(4, 5, (255, 255, 20), 'S'),
-               CLTitem(5, 6, (255, 148, 0), 'SW'),
-               CLTitem(6, 7, (255, 40, 40), 'W'),
-               CLTitem(7, 8, (197, 0, 124), 'NW'),
-               CLTitem(8, UintFillValue, (255, 255, 255), 'No data')]
+    cltlist = [CLTitem(0, 1, (0,0,255), 'N'),
+               CLTitem(1, 2, (126, 0, 255), 'NE'),
+               CLTitem(2, 3, (255, 0, 215), 'E'),
+               CLTitem(3, 4, (255, 126, 0), 'SE'),
+               CLTitem(4, 5, (255, 0, 0), 'S'),
+               CLTitem(5, 6, (255, 245, 0), 'SW'),
+               CLTitem(6, 7, (0, 255, 0), 'W'),
+               CLTitem(7, 8, (0, 230, 255), 'NW'),
+               CLTitem(8, 255, (255, 255, 255), 'No data')]
     
     cltfile = CLT()
     cltfile.new(hdr, cltlist)
-    cltfile.write(r"Z:\snowsim\wind_1500m_daily\wind_direction_1500_en.clt")
+    cltfile.write(r"Z:\tmp\wind_10m_daily\wind_direction_10_en.clt")
     
-
-def _test():
+def __test():
     """
     Test "model()" with a benchmark dataset.
     """
@@ -447,21 +493,21 @@ def _test():
     max_wind = nan2fill(max_wind)
     wind_dir_cat = nan2fill(wind_dir_cat)
     
-    testdir = r'Z:\tmp\wind_1500m_daily'
+    testdir = r'Z:\tmp\wind_10m_daily'
     writePNG(total_wind_avg, os.path.join(testdir, 'test_avg'),
-             os.path.join(testdir, 'avg_wind_speed_1500_no.clt'))
+             os.path.join(testdir, 'avg_wind_speed_10_no.clt'))
     writePNG(max_wind, os.path.join(testdir, 'test_max'),
-             os.path.join(testdir, 'max_wind_speed_1500_no.clt'))
+             os.path.join(testdir, 'max_wind_speed_10_no.clt'))
     writePNG(wind_dir_cat, os.path.join(testdir, 'test_dir'),
-             os.path.join(testdir, 'wind_direction_1500_no.clt'))
-
-
+             os.path.join(testdir, 'wind_direction_10_no.clt'))
+    
 if __name__ == '__main__':
     main()
 
-#    clt_avg_wind_speed_no()
-#    clt_max_wind_speed_no()
-#    clt_wind_direction_no()
-#    clt_wind_direction_no_v2()
-#    clt_wind_direction_en()
-#    _test()
+#    __clt_wind_direction_no()
+#    __clt_wind_direction_en()
+#    __clt_bil_max_wind_speed_no()
+#    __clt_avg_wind_speed_no()
+#    __test()
+
+#One file -> five output wind speed ... avg + 00 06 12 18

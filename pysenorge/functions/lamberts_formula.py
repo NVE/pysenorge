@@ -11,7 +11,6 @@ import math
 # Additional
 
 # Own
-
 def LambertsFormula(N, NE, E, SE, S, SW, W, NW):
     """
     A formula for computing the mean wind-direction from a series of
@@ -34,42 +33,54 @@ def LambertsFormula(N, NE, E, SE, S, SW, W, NW):
     # arctan of the ratio Ce/Cn
     alpha = math.atan2(Ce, Cn)
     degalpha = math.degrees(alpha)
-    
-    # Translate azimuth to cardinal wind direction
-    if degalpha >= 0.0:
-        if degalpha >=0.0 and degalpha<22.5:
-            # wd = 'N'
-            wid = 1
-        elif degalpha >=22.5 and degalpha<67.5:
-            # wd = 'NE'
-            wid = 2
-        elif degalpha >=67.5 and degalpha<112.5:
-            # wd = 'E' 
-            wid = 3
-        elif degalpha >=112.5 and degalpha<157.5:
-            # wd = 'SE'
-            wid = 4
-        elif degalpha >=157.5 and degalpha<=180.0:
-            # wd = 'S'  
-            wid = 5 
-    if degalpha < 0.0:
-        if degalpha <0.0 and degalpha>=-22.5:
-            # wd = 'N'
-            wid = 1
-        elif degalpha <-22.5 and degalpha>=-67.5:
-            # wd = 'NW'
-            wid = 8
-        elif degalpha <-67.5 and degalpha>=-112.5:
-            # wd = 'W' 
-            wid = 7
-        elif degalpha <-112.5 and degalpha>=-157.5:
-            # wd = 'SW'
-            wid = 6
-        elif degalpha <-157.5 and degalpha>=-180.0:
-            # wd = 'S'  
-            wid = 5
-    return wid
 
+    wid={-22.5<=degalpha<22.5:1,#N
+         22.5<=degalpha<67.5:2,#NE
+         67.5<=degalpha<112.5:3,#E
+         112.5<=degalpha<157.5:4,#SE
+         157.5<=degalpha<180:5,#S
+        -22.5>=degalpha>-67.5:6,#SW
+        -67.5>=degalpha>-112.5:7,#W
+        -112.5>=degalpha>-157.5:8,#NW
+        -157.5>=degalpha>-180:5,#S
+        }[1]
+    return wid  
+
+    
+#     # Translate azimuth to cardinal wind direction
+#     if degalpha >= 0.0:
+#         if degalpha >=0.0 and degalpha<22.5:
+#             # wd = 'N'
+#             wid = 1
+#         elif degalpha >=22.5 and degalpha<67.5:
+#             # wd = 'NE'
+#             wid = 2
+#         elif degalpha >=67.5 and degalpha<112.5:
+#             # wd = 'E' 
+#             wid = 3
+#         elif degalpha >=112.5 and degalpha<157.5:
+#             # wd = 'SE'
+#             wid = 4
+#         elif degalpha >=157.5 and degalpha<=180.0:
+#             # wd = 'S'  
+#             wid = 5 
+#     if degalpha < 0.0:
+#         if degalpha <0.0 and degalpha>=-22.5:
+#             # wd = 'N'
+#             wid = 1
+#         elif degalpha <-22.5 and degalpha>=-67.5:
+#             # wd = 'NW'
+#             wid = 8
+#         elif degalpha <-67.5 and degalpha>=-112.5:
+#             # wd = 'W' 
+#             wid = 7
+#         elif degalpha <-112.5 and degalpha>=-157.5:
+#             # wd = 'SW'
+#             wid = 6
+#         elif degalpha <-157.5 and degalpha>=-180.0:
+#             # wd = 'S'  
+#             wid = 5
+#     return wid
 
 if __name__ == '__main__':
     pass
