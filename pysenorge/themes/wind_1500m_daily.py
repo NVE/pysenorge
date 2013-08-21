@@ -73,7 +73,8 @@ from pysenorge.tools.date_converters import iso2datetime, datetime2BILdate, get_
 from pysenorge.converters import nan2fill
 from pysenorge.grid import interpolate_new
 from pysenorge.functions.lamberts_formula import LambertsFormula
-
+#from testrun import timenc
+timenc="00"    
 #---------------------------------------------------------    
 #Define wind model
 #---------------------------------------------------------    
@@ -138,11 +139,10 @@ def main():
         python //~HOME/pysenorge/themes/wind_10m_daily.py YYYY-MM-DD [options]
     """
     
-    #from testrun import timenc
-    timenc = "00"
+    #timenc = "00"
     # Theme variables
-    themedir1 = 'wind_speed_avg_1500m%s%s' %("_", timenc)
-    themedir2 = 'wind_speed_max_1500m%s%s' %("_", timenc)
+    themedir1 = 'wind_speed_avg_1500m' 
+    themedir2 = 'wind_speed_max_1500m'
     
     # Setup input parser
     usage = "usage: python //~HOME/pysenorge/theme_layers/average_windspeed_daily.py YYYY-MM-DD [options]"
@@ -212,14 +212,11 @@ def main():
     # create outputpath
     _tstart = time.gmtime(wind_time[0])
     tstruct = time.gmtime(wind_time[-1]) # or -1 if it should be the average until that date
-    print "For the period %s-%s-%s:%s - %s-%s-%s:%s" % (str(_tstart.tm_year).zfill(4),
-                               str(_tstart.tm_mon).zfill(2),
-                               str(_tstart.tm_mday).zfill(2),
-                               str(_tstart.tm_hour).zfill(2),
-                               str(tstruct.tm_year).zfill(4),
-                               str(tstruct.tm_mon).zfill(2),
-                               str(tstruct.tm_mday).zfill(2),
-                               str(tstruct.tm_hour).zfill(2))
+    begin_time = time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(wind_time[0]))
+    end_time = time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(wind_time[23]))
+    
+    print "For the period from the",begin_time ,"to", end_time
+    
     outfile1 = '%s_%s_%s_%s' % (themedir1, str(tstruct.tm_year).zfill(4),
                                str(tstruct.tm_mon).zfill(2),
                                str(tstruct.tm_mday).zfill(2))
@@ -410,7 +407,6 @@ def main():
                   os.path.join(outdir_hour, outfile6),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
                   )  
-
 
 #        writePNG(wind_dir_intp[0,:,:],
 #                 os.path.join(outdir, 'wind_direction'+'_'+dt),
