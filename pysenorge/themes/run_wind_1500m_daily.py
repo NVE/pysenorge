@@ -8,8 +8,11 @@ Script creating the daily theme (set up in TaskScheduler/crontab).
 '''
 import run_daily
 
+timenc=06
+
 run_daily.runDaily("wind_1500m_daily.py", prognosis=True,
-                   UMperiod=['[7,12]'])
+                   UMperiod=['[0,25]'])
+
 
 #
 #import os

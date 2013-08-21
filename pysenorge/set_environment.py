@@ -26,19 +26,17 @@ if sys.platform == 'linux2':
     
     METdir = r'//hdata/grid/metdata/metno_obs_v1.1/'
     
-    PROGdir = r'//hdata/grid/metdata/prognosis'
+    PROGdir = r'/home/ralf/Dokumente/summerjob/xgeo/pysenorge/'
     
-    BILout = r'//hdata/grid/snowsim'
+    BILout = r'/home/ralf/Dokumente/summerjob/data/'
     
-    BILin = r'//hdata/grid/snowsim'
+    netCDFin = r'/home/ralf/Dokumente/summerjob/data/'
     
-    netCDFin = r'//hdata/grid/metdata/prognosis/um4'
+    netCDFout = r'/home/ralf/Dokumente/summerjob/data/netCDF/'
     
-    netCDFout = r'//hdata/grid/tmp'
+    PNGdir = r'/home/ralf/Dokumente/summerjob/data/'
     
-    PNGdir = r'//hdata/grid/mapimage/png'
-    
-    LOGdir = r'//hdata/grid/log'
+    LOGdir = r'/home/ralf/Dokumente/summerjob/data/log/'
     
 elif sys.platform == 'win32':
     

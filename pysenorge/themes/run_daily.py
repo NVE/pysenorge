@@ -40,8 +40,7 @@ def runDaily(scriptname, prognosis=False, UMperiod=['[6,30]']):
             logging.info("File for %s written!" % (datetime.date.today()+dt).isoformat())
     
     logging.info('Script finished: %s' % datetime.datetime.now().isoformat())
-
-    
+   
 if __name__ == "__main__":
     print "Usage:\nimport run_daily\nrun_daily.runDaily(full_script_name)"
     
