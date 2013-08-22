@@ -35,7 +35,9 @@ def BIL2PNG(BILfile, BILdtype='uint16', CLTfile=None, outdir=os.getcwd()):
     
     outfile = os.path.splitext(BILfile)[0]
     
-    wdata = flipud(bd.data)
+    wdata = float32(flipud(bd.data))*0.1
+    print wdata.shape
+    print type(wdata)
     # Write to PNG file
     writePNG(wdata, os.path.join(outdir, outfile), CLTfile)
     
@@ -66,7 +68,6 @@ def _depth_hoar_1():
             print "Could not convert %s" % f
 
 def _depth_hoar_2():
-    
     os.chdir(r'Z:\snowsim\depth_hoar_index_2\2011')
 #    files = glob.glob('*.bil')
     files = _makePeriod("depth_hoar_index_1",
