@@ -41,7 +41,6 @@ Daily production usage:
 # Built-in
 #---------------------------------------------------------    
 import os, time
-import math
 from optparse import OptionParser
 
 #---------------------------------------------------------    
@@ -65,7 +64,7 @@ execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 from pysenorge.set_environment import netCDFin, BILout, FloatFillValue, \
                                       UintFillValue
 from pysenorge.io.bil import BILdata
-from pysenorge.io.nc import NCdata
+#from pysenorge.io.nc import NCdata
 from pysenorge.io.png import writePNG
 from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.converters import nan2fill
@@ -76,8 +75,6 @@ from pysenorge.functions.lamberts_formula import LambertsFormula
 #import timenc from the Arome Data
 #---------------------------------------------------------    
  
-#from testrun import timenc
-   
 #---------------------------------------------------------    
 #Define wind model
 #---------------------------------------------------------    
