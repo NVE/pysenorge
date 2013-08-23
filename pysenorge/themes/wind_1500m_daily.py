@@ -55,7 +55,7 @@ except ImportError:
     except ImportError:
         print '''WARNING: Can not find module "netCDF4" or "Scientific.IO.NetCDF"!
         Please install for netCDF file support.'''
-from numpy import sqrt, mean, flipud, zeros_like, arctan2, zeros, uint16
+from numpy import sqrt, mean, flipud, zeros_like, arctan2, zeros, uint16, degrees, amax
 
 execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 
@@ -93,40 +93,27 @@ def model(x_wind, y_wind):
     total_wind = sqrt(x_wind**2 + y_wind**2)
     dims = total_wind.shape
     total_wind_avg = mean(total_wind, axis=0)
-    max_wind = zeros_like(total_wind_avg)
     wind_dir_cat = zeros_like(total_wind_avg)
     wind_dir = arctan2(y_wind, x_wind)
       
     print "Wind-data dimensions:", dims
-    li_wind=[]
-    for i in xrange(dims[1]):
-        for j in xrange(dims[2]):
-            max_wind[i][j] = total_wind[:,i,j].max()
-            for k in xrange(dims[0]):
-                #added: round degalpha to two decimals places because of rounding mistakes
-                degalpha = math.ceil(math.degrees(wind_dir[k,i,j])*100)/100
-                if degalpha != nan:
-                    try:
-                        ob_var={-22.5<=degalpha<22.5:"W",
-                                22.5<=degalpha<67.5:"SW",
-                                67.5<=degalpha<112.5:"S" ,
-                                112.5<=degalpha<157.5:"SE",
-                                157.5<=degalpha<=180:"E",
-                                -22.5>=degalpha>-67.5:"NW",
-                                -67.5>=degalpha>-112.5:"N" ,
-                                -112.5>=degalpha>-157.5:"NE",
-                                -157.5>=degalpha>=-180:"E",
-                                }[1]
-                        li_wind.append(ob_var)
-                    except KeyError:
-                        print degalpha
-                         
-    wind_directions=[li_wind.count("N"),li_wind.count("NE"),
-                     li_wind.count("E"),li_wind.count("SE"),
-                     li_wind.count("S"),li_wind.count("SW"),
-                     li_wind.count("W"),li_wind.count("NW")]
-   
-    wind_dir_cat[i][j] = LambertsFormula(*wind_directions)
+    
+    #Create max wind vector
+    max_wind = amax(total_wind[1:24,0:dims[1],0:dims[2]],axis=0)
+    new_wind_dir = degrees(wind_dir)
+
+    W = new_wind_dir[(new_wind_dir>=-22.5) & (new_wind_dir<22.5)]
+    SW = new_wind_dir[(new_wind_dir>=22.5) & (new_wind_dir<67.5)]
+    S = new_wind_dir[(new_wind_dir>=67.5) & (new_wind_dir<112.5)]
+    SE = new_wind_dir[(new_wind_dir>=112.5) & (new_wind_dir<157.5)]
+    NW = new_wind_dir[(new_wind_dir>=-22.5) & (new_wind_dir<-67.5)]
+    N = new_wind_dir[(new_wind_dir>=-67.5) & (new_wind_dir<-112.5)]
+    NE = new_wind_dir[(new_wind_dir>=-112.5) & (new_wind_dir<-157.5)]
+    E = new_wind_dir[(new_wind_dir>=-157.5) & (new_wind_dir<=-180) & (new_wind_dir>=157.5) & (new_wind_dir<=180)]
+        
+#     for i in xrange(dims[1]):
+#         for j in xrange(dims[2]):
+    wind_dir_cat[0:dims[1]][0:dims[2]] = LambertsFormula(len(N),len(NE),len(E),len(SE),len(S),len(SW),len(W),len(NW))
     
     return total_wind_avg, max_wind, total_wind, wind_dir_cat
 
@@ -143,7 +130,6 @@ def main():
     """
     
     timenc = "00"
-    
     # Theme variables
     themedir1 = 'wind_speed_avg_1500m' 
     themedir2 = 'wind_speed_max_1500m'
@@ -454,10 +440,10 @@ def main():
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
                   )  
 
-#        writePNG(wind_dir_intp[0,:,:],
-#                 os.path.join(outdir, 'wind_direction'+'_'+dt),
-#                 cltfile=r"Z:\tmp\wind_10m_daily\wind_direction_10_no.clt"
-#                 )
+#         writePNG(wind_dir_intp[0,:,:],
+#                  os.path.join(outdir, 'wind_direction'+'_'+dt),
+#                  cltfile=r"Z:\tmp\wind_10m_daily\wind_direction_10_no.clt"
+#                  )
     
     # At last - cross fingers it all worked out! 
     print "\n*** Finished successfully ***\n"
