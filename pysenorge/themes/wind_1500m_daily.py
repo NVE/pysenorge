@@ -95,7 +95,8 @@ def model(x_wind, y_wind):
     wind_dir = arctan2(y_wind, x_wind)
       
     print "Wind-data dimensions:", dims
-    
+
+#---------------------------------------------------------    
     #Create max wind vector
     max_wind = amax(total_wind[0:24,0:dims[1],0:dims[2]],axis=0)
     new_wind_dir = degrees(wind_dir)
@@ -145,8 +146,12 @@ def main():
     
         python //~HOME/pysenorge/themes/wind_10m_daily.py YYYY-MM-DD [options]
     """
+    #---------------------------------------------------------    
+    #Timenc variable is comes from the inputdata and should be according to the Aromemodell
+    #eihter "00","06","12","18"
     
     timenc = "00"
+    
     # Theme variables
     themedir1 = 'wind_speed_avg_1500m' 
     themedir2 = 'wind_speed_max_1500m'
@@ -488,9 +493,7 @@ def main():
                   os.path.join(outdir1, 'wind_direction_hour_18'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
-    
-    
-    
+        
     
     
     # At last - cross fingers* it all worked out! *and toes !!! 
