@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
-from numpy.core.numeric import nan
+from numpy.core.numeric import nan, NaN
+from matplotlib.tests.test_simplification import nan
 __docformat__ = 'reStructuredText'
 '''
 Calculates the average wind velocity based on hourly wind vector data.
@@ -54,7 +55,7 @@ except ImportError:
     except ImportError:
         print '''WARNING: Can not find module "netCDF4" or "Scientific.IO.NetCDF"!
         Please install for netCDF file support.'''
-from numpy import sqrt, mean, flipud, zeros_like, arctan2, zeros, uint16, degrees, amax
+from numpy import sqrt, mean, flipud, zeros_like, arctan2, zeros, uint16, degrees, amax, where
 
 execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 
@@ -96,21 +97,42 @@ def model(x_wind, y_wind):
     print "Wind-data dimensions:", dims
     
     #Create max wind vector
-    max_wind = amax(total_wind[1:24,0:dims[1],0:dims[2]],axis=0)
+    max_wind = amax(total_wind[0:24,0:dims[1],0:dims[2]],axis=0)
     new_wind_dir = degrees(wind_dir)
 
     W = new_wind_dir[(new_wind_dir>=-22.5) & (new_wind_dir<22.5)]
     SW = new_wind_dir[(new_wind_dir>=22.5) & (new_wind_dir<67.5)]
     S = new_wind_dir[(new_wind_dir>=67.5) & (new_wind_dir<112.5)]
     SE = new_wind_dir[(new_wind_dir>=112.5) & (new_wind_dir<157.5)]
-    NW = new_wind_dir[(new_wind_dir>=-22.5) & (new_wind_dir<-67.5)]
-    N = new_wind_dir[(new_wind_dir>=-67.5) & (new_wind_dir<-112.5)]
-    NE = new_wind_dir[(new_wind_dir>=-112.5) & (new_wind_dir<-157.5)]
-    E = new_wind_dir[(new_wind_dir>=-157.5) & (new_wind_dir<=-180) & (new_wind_dir>=157.5) & (new_wind_dir<=180)]
-        
-    wind_dir_cat[0:dims[1]][0:dims[2]] = LambertsFormula(len(N),len(NE),len(E),len(SE),len(S),len(SW),len(W),len(NW))
+    NW = new_wind_dir[(new_wind_dir>-22.5) & (new_wind_dir<=-67.5)]
+    N = new_wind_dir[(new_wind_dir>-67.5) & (new_wind_dir<=-112.5)]
+    NE = new_wind_dir[(new_wind_dir>-112.5) & (new_wind_dir<=-157.5)]
+    E = new_wind_dir[(new_wind_dir<-157.5) | (new_wind_dir>=157.5) ]
+      
+    wind_dir_cat[:,:] = LambertsFormula(len(N),len(NE),len(E),len(SE),len(S),len(SW),len(W),len(NW))
     
-    return total_wind_avg, max_wind, total_wind, wind_dir_cat
+#---------------------------------------------------------    
+    #Daily wind directions
+    #W
+    hour_wind_dir = where((new_wind_dir>=-22.5) & (new_wind_dir<22.5),6, new_wind_dir)
+    #SW
+    hour_wind_dir = where((hour_wind_dir>=22.5) & (hour_wind_dir<67.5),5, hour_wind_dir)
+    #S
+    hour_wind_dir = where((hour_wind_dir>=67.5) & (hour_wind_dir<112.5),4, hour_wind_dir)
+    #SE
+    hour_wind_dir = where((hour_wind_dir>=112.5) & (hour_wind_dir<157.5),3, hour_wind_dir)
+    #NW
+    hour_wind_dir = where((hour_wind_dir>-22.5) & (hour_wind_dir<=-67.5),7, hour_wind_dir)
+    #N
+    hour_wind_dir = where((hour_wind_dir>-67.5) & (hour_wind_dir<=-112.5),0, hour_wind_dir)
+    #NE
+    hour_wind_dir = where((hour_wind_dir>-112.5) & (hour_wind_dir<=-157.5),1, hour_wind_dir)
+    #E
+    hour_wind_dir = where((hour_wind_dir<-157.5) | (hour_wind_dir>=157.5) ,2, hour_wind_dir)
+    #missing value
+    hour_wind_dir = where((hour_wind_dir==nan) ,8, hour_wind_dir)
+     
+    return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir
 
 #---------------------------------------------------------    
 #Start main program
@@ -261,12 +283,12 @@ def main():
 #Clip wind data to SEnorge grid 
 #---------------------------------------------------------    
     # Calculate the wind speed vector - using model()
-    total_wind_avg, max_wind, total_wind, wind_dir = model(x_wind, y_wind) 
+    total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind = model(x_wind, y_wind) 
     
     # interpolate total average wind speed to seNorge grid
     total_wind_avg_intp = interpolate_new(total_wind_avg)
     max_wind_intp = interpolate_new(max_wind)
-    wind_dir_intp = interpolate_new(wind_dir)
+    wind_dir_intp = interpolate_new(wind_dir_cat)
     
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
@@ -279,12 +301,17 @@ def main():
     if timenc == "00":
     #at 00:00
         wind_00 = interpolate_new(total_wind[0,:,:])
+        hour_wind_intp_00 = interpolate_new(hour_wind[0,:,:])
+    
     #at 06:00
         wind_06 = interpolate_new(total_wind[6,:,:])
+        hour_wind_intp_06 = interpolate_new(hour_wind[6,:,:])
     #at 12:00
         wind_12 = interpolate_new(total_wind[12,:,:])
+        hour_wind_intp_12 = interpolate_new(hour_wind[12,:,:])
     #at 18:00
         wind_18 = interpolate_new(total_wind[18,:,:])
+        hour_wind_intp_18 = interpolate_new(hour_wind[18,:,:])
 
     elif timenc == "06":
     #at 06:00
@@ -414,7 +441,7 @@ def main():
                  cltfile=r"/home/ralf/Dokumente/summerjob/data/max_wind_speed_10_no.clt"
                  )
         
-        #6hour Norgemaps
+        #6hour Norgemaps windspeed
         writePNG(wind_00,
                  os.path.join(outdir_hour, outfile3),
                  cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
@@ -435,10 +462,36 @@ def main():
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
                   )  
 
-#         writePNG(wind_dir_intp[0,:,:],
-#                  os.path.join(outdir, 'wind_direction'+'_'+dt),
-#                  cltfile=r"Z:\tmp\wind_10m_daily\wind_direction_10_no.clt"
-#                  )
+        #Wind direction
+        writePNG(wind_dir_intp[:,:],
+                  os.path.join(outdir1, 'wind_direction'),
+                  cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
+                  )
+        
+        #6hour Norgemaps winddirection
+        writePNG(hour_wind_intp_00[:,:],
+                  os.path.join(outdir1, 'wind_direction_hour_00'),
+                  cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
+                  )
+        
+        writePNG(hour_wind_intp_06[:,:],
+                  os.path.join(outdir1, 'wind_direction_hour_06'),
+                  cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
+                  )
+        
+        writePNG(hour_wind_intp_12[:,:],
+                  os.path.join(outdir1, 'wind_direction_hour_12'),
+                  cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
+                  )
+        
+        writePNG(hour_wind_intp_18[:,:],
+                  os.path.join(outdir1, 'wind_direction_hour_18'),
+                  cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
+                  )
+    
+    
+    
+    
     
     # At last - cross fingers* it all worked out! *and toes !!! 
     print "\n*** Finished successfully ***\n"
