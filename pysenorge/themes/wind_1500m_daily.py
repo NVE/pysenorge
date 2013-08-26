@@ -626,42 +626,5 @@ def __clt_wind_direction_en():
     cltfile.new(hdr, cltlist)
     cltfile.write(r"Z:\tmp\wind_10m_daily\wind_direction_10_en.clt")
     
-def __test():
-    """
-    Test "model()" with a benchmark dataset.
-    """
-    # Init x and y wind components
-    x_wind = zeros((3,12,10))
-    y_wind = zeros((3,12,10)) 
-    
-    # Upper left corner blows from N with "Stiv kuling"
-    y_wind[:,6:12,0:5] = -14.0
-    
-    # Upper right corner blows from SE with "Orkan"
-    x_wind[:,6:12,5:10] = -32.0
-    y_wind[:,6:12,5:10] = 32.0
-    
-    # Lower left corner blows from W with "Svak wind"
-    x_wind[:,0:6,0:5] = 2.0
-    
-    # Lower right corner blows from NW with "Full storm"
-    x_wind[:,0:6,5:10] = 20.0
-    y_wind[:,0:6,5:10] = -20.0
-    
-    total_wind_avg, max_wind, wind_dir_cat = model(x_wind, y_wind)
-    print total_wind_avg.shape, max_wind.shape, wind_dir_cat.shape
-    
-    total_wind_avg = nan2fill(total_wind_avg)
-    max_wind = nan2fill(max_wind)
-    wind_dir_cat = nan2fill(wind_dir_cat)
-    
-    testdir = r'Z:\tmp\wind_10m_daily'
-    writePNG(total_wind_avg, os.path.join(testdir, 'test_avg'),
-             os.path.join(testdir, 'avg_wind_speed_10_no.clt'))
-    writePNG(max_wind, os.path.join(testdir, 'test_max'),
-             os.path.join(testdir, 'max_wind_speed_10_no.clt'))
-    writePNG(wind_dir_cat, os.path.join(testdir, 'test_dir'),
-             os.path.join(testdir, 'wind_direction_10_no.clt'))
-    
 if __name__ == '__main__':
     main()
