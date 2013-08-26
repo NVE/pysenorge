@@ -37,3 +37,7 @@ for j in sample(xrange(width),250):
 
 print li
 print len(li)
+
+lisa = "GIT PULL"
+print lisa 
+
