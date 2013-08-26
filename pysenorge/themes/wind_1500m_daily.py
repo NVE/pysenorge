@@ -1,4 +1,4 @@
-# -*- coding:iso-8859-10 -*-
+# -*- coding:utf-8 -*-
 from numpy.core.numeric import nan
 __docformat__ = 'reStructuredText'
 '''
@@ -442,7 +442,7 @@ def main():
 #                  cltfile=r"Z:\tmp\wind_10m_daily\wind_direction_10_no.clt"
 #                  )
     
-    # At last - cross fingers it all worked out! 
+    # At last - cross fingers* it all worked out! *and toes !!! 
     print "\n*** Finished successfully ***\n"
 
 
