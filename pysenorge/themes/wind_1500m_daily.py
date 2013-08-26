@@ -489,10 +489,6 @@ def main():
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
     
-    
-    
-    
-    
     # At last - cross fingers* it all worked out! *and toes !!! 
     print "\n*** Finished successfully ***\n"
 
