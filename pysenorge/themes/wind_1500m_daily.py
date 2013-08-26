@@ -108,8 +108,6 @@ def model(x_wind, y_wind):
     NE = new_wind_dir[(new_wind_dir>=-112.5) & (new_wind_dir<-157.5)]
     E = new_wind_dir[(new_wind_dir>=-157.5) & (new_wind_dir<=-180) & (new_wind_dir>=157.5) & (new_wind_dir<=180)]
         
-#     for i in xrange(dims[1]):
-#         for j in xrange(dims[2]):
     wind_dir_cat[0:dims[1]][0:dims[2]] = LambertsFormula(len(N),len(NE),len(E),len(SE),len(S),len(SW),len(W),len(NW))
     
     return total_wind_avg, max_wind, total_wind, wind_dir_cat
