@@ -5,6 +5,8 @@ __docformat__ = 'reStructuredText'
 '''
 Calculates the average wind velocity based on hourly wind vector data.
 
+NEWEST VERSION
+
 A netcdf file with hourly data from 07:00 to 06:00 UTC serves as data source.
 The amplitude of the hourly wind vectors is calculated for each cell. 
 The amplitudes are then averaged over 24h. The result is plotted in the 1 km seNorge grid.
