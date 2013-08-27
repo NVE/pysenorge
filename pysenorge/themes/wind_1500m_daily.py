@@ -358,7 +358,7 @@ def main():
  
 #---------------------------------------------------------     
         #avg wind
-        bil_avg_wind = flipud(uint16(total_wind_avg_intp*10))
+        bil_avg_wind = flipud(uint16(total_wind_avg_intp*10.0))
         bil_avg_wind[mask] = UintFillValue
          
         bilfile = BILdata(os.path.join(outdir1,

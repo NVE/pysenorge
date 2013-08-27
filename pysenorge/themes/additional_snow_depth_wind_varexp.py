@@ -157,7 +157,7 @@ def main():
     cdt = iso2datetime(args[0]+" 06:00:00")
     windfilename = "wind_speed_avg_10m_%s.bil" % datetime2BILdate(cdt)
     
-    # Add full path to the filename
+    # Add full path to the filename load wind_data
     windfile = os.path.join(BILout, "wind_speed_avg_10m", str(get_hydroyear(cdt)),
                             windfilename)
     if not os.path.exists(windfile):
@@ -168,8 +168,9 @@ def main():
         wind = BILdata(windfile, 'uint16')
         wind.read()
         # convert to Celsius
-        wind.data = float32(wind.data)*0.1
+        wind.data = float32(wind.data)*0.1 #multiplyed by 0.1 because of in integer values in wind_model
     
+    #import 
     sdfilename = "sdfsw_%s.bil" % datetime2BILdate(cdt)
     sdfile = os.path.join(BILout, "sdfsw", str(get_hydroyear(cdt)), sdfilename)
         
