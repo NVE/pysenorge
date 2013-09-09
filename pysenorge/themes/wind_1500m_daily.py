@@ -1,6 +1,4 @@
 # -*- coding:utf-8 -*-
-from numpy.core.numeric import nan, NaN
-from matplotlib.tests.test_simplification import nan
 __docformat__ = 'reStructuredText'
 '''
 Calculates the average wind velocity based on hourly wind vector data.
@@ -65,7 +63,7 @@ execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 from pysenorge.set_environment import netCDFin, BILout, FloatFillValue, \
                                       UintFillValue
 from pysenorge.io.bil import BILdata
-#from pysenorge.io.nc import NCdata
+from pysenorge.io.nc import NCdata
 from pysenorge.io.png import writePNG
 from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.converters import nan2fill
@@ -88,6 +86,7 @@ def model(x_wind, y_wind):
         - x_wind: Wind vector component in *x*-direction
         - y_wind: Wind vector component in *y*-direction
     """    
+    
     total_wind = sqrt(x_wind**2 + y_wind**2)
     dims = total_wind.shape
     total_wind_avg = mean(total_wind, axis=0)
@@ -95,9 +94,9 @@ def model(x_wind, y_wind):
     wind_dir = arctan2(y_wind, x_wind)
       
     print "Wind-data dimensions:", dims
-
+    
 #---------------------------------------------------------    
-    #Create max wind vector
+#Create max wind vector
     max_wind = amax(total_wind[0:24,0:dims[1],0:dims[2]],axis=0)
     new_wind_dir = degrees(wind_dir)
 
@@ -113,7 +112,7 @@ def model(x_wind, y_wind):
     wind_dir_cat[:,:] = LambertsFormula(len(N),len(NE),len(E),len(SE),len(S),len(SW),len(W),len(NW))
     
 #---------------------------------------------------------    
-    #Daily wind directions
+#Daily wind directions with 45 degrees
     #W
     hour_wind_dir = where((new_wind_dir>=-22.5) & (new_wind_dir<22.5),6, new_wind_dir)
     #SW
@@ -130,9 +129,9 @@ def model(x_wind, y_wind):
     hour_wind_dir = where((hour_wind_dir>-112.5) & (hour_wind_dir<=-157.5),1, hour_wind_dir)
     #E
     hour_wind_dir = where((hour_wind_dir<-157.5) | (hour_wind_dir>=157.5) ,2, hour_wind_dir)
-    #missing value
-    hour_wind_dir = where((hour_wind_dir==nan) ,8, hour_wind_dir)
      
+#---------------------------------------------------------    
+#Return values
     return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir
 
 #---------------------------------------------------------    
@@ -146,9 +145,9 @@ def main():
     
         python //~HOME/pysenorge/themes/wind_10m_daily.py YYYY-MM-DD [options]
     """
-    #---------------------------------------------------------    
-    #Timenc variable is comes from the inputdata and should be according to the Aromemodell
-    #eihter "00","06","12","18"
+#---------------------------------------------------------    
+#Timenc variable is comes from the inputdata and should be according to the Aromemodell
+#either "00","06","12","18"
     
     timenc = "00"
     
@@ -184,7 +183,7 @@ def main():
 #   Comment to suppress help
 #   parser.print_help()
     (options, args) = parser.parse_args()
-    
+
     # Verify input parameters
     if len(args) != 1:
         parser.error("Please provide the date in ISO format YYYY-MM-DD!")
@@ -287,14 +286,14 @@ def main():
 #---------------------------------------------------------
 #Clip wind data to SEnorge grid 
 #---------------------------------------------------------    
-    # Calculate the wind speed vector - using model()
+    # Calculate the wind speed vector - using model() 
     total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind = model(x_wind, y_wind) 
     
     # interpolate total average wind speed to seNorge grid
     total_wind_avg_intp = interpolate_new(total_wind_avg)
     max_wind_intp = interpolate_new(max_wind)
     wind_dir_intp = interpolate_new(wind_dir_cat)
-    
+
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
     max_wind_intp = nan2fill(max_wind_intp)
@@ -307,7 +306,6 @@ def main():
     #at 00:00
         wind_00 = interpolate_new(total_wind[0,:,:])
         hour_wind_intp_00 = interpolate_new(hour_wind[0,:,:])
-    
     #at 06:00
         wind_06 = interpolate_new(total_wind[6,:,:])
         hour_wind_intp_06 = interpolate_new(hour_wind[6,:,:])
@@ -321,33 +319,45 @@ def main():
     elif timenc == "06":
     #at 06:00
         wind_06 = interpolate_new(total_wind[0,:,:])
+        hour_wind_intp_06 = interpolate_new(hour_wind[0,:,:])
     #at 12:00
         wind_12 = interpolate_new(total_wind[6,:,:])
+        hour_wind_intp_12 = interpolate_new(hour_wind[6,:,:])
     #at 18:00
         wind_18 = interpolate_new(total_wind[12,:,:])
+        hour_wind_intp_18 = interpolate_new(hour_wind[12,:,:])
     #at 00:00
         wind_00 = interpolate_new(total_wind[18,:,:])
-
+        hour_wind_intp_00 = interpolate_new(hour_wind[18,:,:])
+    
     elif timenc == "12":
     #at 12:00
         wind_12 = interpolate_new(total_wind[0,:,:])
+        hour_wind_intp_12 = interpolate_new(hour_wind[0,:,:])
     #at 18:00
         wind_18 = interpolate_new(total_wind[6,:,:])
+        hour_wind_intp_18 = interpolate_new(hour_wind[6,:,:])
     #at 00:00
         wind_00 = interpolate_new(total_wind[12,:,:])
+        hour_wind_intp_00 = interpolate_new(hour_wind[12,:,:])
     #at 06:00
         wind_06 = interpolate_new(total_wind[18,:,:])
-
+        hour_wind_intp_06 = interpolate_new(hour_wind[18,:,:])
+    
     elif timenc == "18":
     #at 18:00
         wind_18 = interpolate_new(total_wind[0,:,:])
+        hour_wind_intp_18 = interpolate_new(hour_wind[0,:,:])
     #at 00:00
         wind_00 = interpolate_new(total_wind[6,:,:])
+        hour_wind_intp_00 = interpolate_new(hour_wind[6,:,:])
     #at 06:00
         wind_06 = interpolate_new(total_wind[12,:,:])
+        hour_wind_intp_06 = interpolate_new(hour_wind[12,:,:])
     #at 12:00
         wind_12 = interpolate_new(total_wind[18,:,:])
-
+        hour_wind_intp_12 = interpolate_new(hour_wind[18,:,:])
+    
 #---------------------------------------------------------
 #Option --bil => Multiplied by 10 to store data as integer
 #---------------------------------------------------------    
@@ -376,7 +386,7 @@ def main():
         biltext = bilfile.write(bil_max_wind.flatten())
         print biltext
 #---------------------------------------------------------    
-        #  bil wind_00
+        # bil wind at 00
         bil_wind_00 = flipud(uint16(wind_00*10.0))
         bil_wind_00[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
@@ -385,7 +395,7 @@ def main():
         biltext = bilfile.write(bil_wind_00.flatten())
         print biltext
 #---------------------------------------------------------    
-        #  bil wind_06
+        # bil wind at 06
         bil_wind_06 = flipud(uint16(wind_06*10.0))
         bil_wind_06[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
@@ -394,7 +404,7 @@ def main():
         biltext = bilfile.write(bil_wind_06.flatten())
         print biltext
 #---------------------------------------------------------    
-        #  bil wind_12
+        #bil wind at 12
         bil_wind_12 = flipud(uint16(wind_12*10.0))
         bil_wind_12[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
@@ -403,7 +413,7 @@ def main():
         biltext = bilfile.write(bil_wind_12.flatten())
         print biltext
 #---------------------------------------------------------    
-        #  bil wind_18
+        #bil wind at 18
         bil_wind_18 = flipud(uint16(wind_18*10.0))
         bil_wind_18[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
@@ -411,23 +421,23 @@ def main():
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_18.flatten())
         print biltext
-        
+
 #---------------------------------------------------------
 #Option --nc write a nc file
 #---------------------------------------------------------    
-#     if options.nc:
-#         ncfile = NCdata(os.path.join(outdir1, outfile1+'.nc'))
-# 
-#         ncfile.new(wind_time[-1])
-#         
-#         ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str, "m s-1",
-#                             'Average wind speed last 24h', total_wind_avg_intp)
-#         ncfile.add_variable('max_wind_speed', max_wind.dtype.str, "m s-1",
-#                             'Maximum wind gust last 24h', max_wind_intp)
-#         ncfile.add_variable('wind_direction', wind_dir.dtype.str,
-#                             "cardinal direction",
-#                             'Prevailing wind direction last 24h', wind_dir_intp)
-#         ncfile.close()
+    if options.nc:
+        ncfile = NCdata(os.path.join(outdir1, outfile1+'.nc'))
+  
+        ncfile.new(wind_time[-1])
+          
+        ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str, "m s-1",
+                             'Average wind speed last 24h', total_wind_avg_intp)
+        ncfile.add_variable('max_wind_speed', max_wind.dtype.str, "m s-1",
+                             'Maximum wind gust last 24h', max_wind_intp)
+        ncfile.add_variable('wind_direction', wind_dir_cat.dtype.str,
+                             "cardinal direction",
+                             'Prevailing wind direction last 24h', wind_dir_intp)
+        ncfile.close()
 
 #---------------------------------------------------------
 #Option --png Write a PNG file
@@ -472,7 +482,7 @@ def main():
                   os.path.join(outdir1, 'wind_direction'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
-        
+    
         #6hour Norgemaps winddirection
         writePNG(hour_wind_intp_00[:,:],
                   os.path.join(outdir1, 'wind_direction_hour_00'),

@@ -24,24 +24,6 @@ from pysenorge.tools.date_converters import datetime2BILdate, iso2datetime,\
 from pysenorge.io.bil import BILdata
 from pysenorge.grid import senorge_mask
 
-
-def __model(u, nsd):
-    '''  
-    :Parameters:
-        - u: average daily wind speed [m/s] (UM4->seNorge)
-        - nsd: new snow depth [mm] (this)
-    '''
-    
-    Hwind = zeros_like(u)
-    a1 = nsd > 50 # ignore new snow depth below 5 cm
-    a2 = nsd < 65531 
-    a = a1*a2 # mask that excludes cells without new snow and special markers
-    uc = clip(u, 0, 20) # set wind speeds >20 m s-1 to 20 m s-1 - disregards the fact the higher wind speeds actually lead to weaker snow transport due to increased sublimation.
-    k = 8e-5 # [s3 d-1 m-2]
-    Hwind[a] = k * uc[a]**3 # additional snow depth after Foehn(1980)
-
-    return Hwind
-
 def model(u, nsd, lwc, age):
     '''    
     Empirical formulation relating the additional snow depth |Hwind| deposited in lee

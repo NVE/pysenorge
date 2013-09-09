@@ -174,8 +174,5 @@ class BILdata(object):
         except ImportError:
             print '''Required plotting module "matplotlib" not found!\nVisit www.matplotlib.sf.net'''
                 
-        
-    
-    
 if __name__ == "__main__":
     pass

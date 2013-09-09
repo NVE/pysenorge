@@ -9,7 +9,7 @@ import os
 import glob
 import datetime
 # Adds folder containing the "pysenorge" package to the PYTHONPATH @UnusedImport
-execfile("../themes/set_pysenorge_path.py") 
+execfile("./themes/set_pysenorge_path.py") 
 # Additional
 from numpy import flipud, float32
 # Own
