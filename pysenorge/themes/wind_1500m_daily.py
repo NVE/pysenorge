@@ -135,21 +135,21 @@ def model(x_wind, y_wind):
     print "-------------------------\n Done Part 1 \n-------------------------"
        
 #---------------------------------------------------------    
-#Maximal wind in dominated wind direction
+#Calculate maximal wind speed in dominant wind direction
      
-    new_test = zeros_like(wind_dir_cat)
+    dom_wind_tab = zeros_like(wind_dir_cat)
    
     for i in xrange(dims[1]):
         for j in xrange(dims[2]):
-            new_test = dom_wind(wind_dir_cat,1,-67.5,-112.5,wind_dir,total_wind,i,j,new_test,dims) #N
-            new_test = dom_wind(wind_dir_cat,2,-112.5,-157.5,wind_dir,total_wind,i,j,new_test,dims)#NE
-            new_test = dom_wind(wind_dir_cat,3,157.5,180,wind_dir,total_wind,i,j,new_test,dims)    #E
-            new_test = dom_wind(wind_dir_cat,3,-157.5,-180,wind_dir,total_wind,i,j,new_test,dims)  #E
-            new_test = dom_wind(wind_dir_cat,4,112.5,157.5,wind_dir,total_wind,i,j,new_test,dims)  #SE
-            new_test = dom_wind(wind_dir_cat,5,67.5,112.5,wind_dir,total_wind,i,j,new_test,dims)   #S
-            new_test = dom_wind(wind_dir_cat,6,22.5,67.5,wind_dir,total_wind,i,j,new_test,dims)    #SW
-            new_test = dom_wind(wind_dir_cat,7,0,22.5,wind_dir,total_wind,i,j,new_test,dims)       #W
-            new_test = dom_wind(wind_dir_cat,8,-22.5,-67.5,wind_dir,total_wind,i,j,new_test,dims)  #NW
+            dom_wind_tab = dom_wind(wind_dir_cat,1,-67.5,-112.5,wind_dir,total_wind,i,j,dom_wind_tab,dims) #N
+            dom_wind_tab = dom_wind(wind_dir_cat,2,-112.5,-157.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)#NE
+            dom_wind_tab = dom_wind(wind_dir_cat,3,157.5,180,wind_dir,total_wind,i,j,dom_wind_tab,dims)    #E
+            dom_wind_tab = dom_wind(wind_dir_cat,3,-157.5,-180,wind_dir,total_wind,i,j,dom_wind_tab,dims)  #E
+            dom_wind_tab = dom_wind(wind_dir_cat,4,112.5,157.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)  #SE
+            dom_wind_tab = dom_wind(wind_dir_cat,5,67.5,112.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)   #S
+            dom_wind_tab = dom_wind(wind_dir_cat,6,22.5,67.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)    #SW
+            dom_wind_tab = dom_wind(wind_dir_cat,7,0,22.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)       #W
+            dom_wind_tab = dom_wind(wind_dir_cat,8,-22.5,-67.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)  #NW
              
     print "-------------------------\n Done Part 2 \n-------------------------"
            
@@ -175,7 +175,7 @@ def model(x_wind, y_wind):
      
 #---------------------------------------------------------    
 #Return values
-    return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir, new_test
+    return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir, dom_wind_tab
 
 
 
@@ -332,20 +332,20 @@ def main():
 #Clip wind data to SEnorge grid 
 #---------------------------------------------------------    
     # Calculate the wind speed vector - using model() 
-    total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind,new_test = model(x_wind, y_wind) 
+    total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind,dom_wind_tab = model(x_wind, y_wind) 
     
     # interpolate total average wind speed to seNorge grid
     total_wind_avg_intp = interpolate_new(total_wind_avg)
     max_wind_intp = interpolate_new(max_wind)
     wind_dir_intp = interpolate_new(wind_dir_cat)
-    new_test_intp = interpolate_new(new_test)
+    dom_wind_tab_intp = interpolate_new(dom_wind_tab)
     
 
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
     max_wind_intp = nan2fill(max_wind_intp)
     wind_dir_intp = nan2fill(wind_dir_intp)
-    new_test_intp = nan2fill(new_test_intp)
+    dom_wind_tab_intp = nan2fill(dom_wind_tab_intp)
 
 
 #--------------------------------------------------------
@@ -532,8 +532,8 @@ def main():
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
     
-        writePNG(new_test_intp[:,:],
-                  os.path.join(outdir1, 'wind_direction_new_test'),
+        writePNG(dom_wind_tab_intp[:,:],
+                  os.path.join(outdir1, 'wind_direction_dom_wind_tab'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/max_wind_speed_10_no.clt"
                   )
       

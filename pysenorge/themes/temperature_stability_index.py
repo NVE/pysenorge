@@ -19,7 +19,7 @@ from numpy import arange, zeros, uint16, int16, float32
 execfile("set_pysenorge_path.py") # Adds folder containing the "pysenorge" package to the PYTHONPATH @UnusedImport
 from pysenorge.set_environment import METdir, BILout, netCDFout, IntFillValue, UintFillValue
 from pysenorge.io.bil import BILdata
-from pysenorge.tools.get_date_filename import get_date_filename
+#from pysenorge.tools.get_date_filename import get_date_filename
 from pysenorge.grid import senorge_mask
 
 
