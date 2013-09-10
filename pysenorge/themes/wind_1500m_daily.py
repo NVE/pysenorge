@@ -24,12 +24,6 @@ Daily production usage:
 - Add a theme showing max wind gust last 24 h.
 - Add a theme showing prevailing wind direction last 24 h.
 
-- Make dependent on wind direction. Read wind direction - determine 
-    predominant wind direction - calculated average wind speed in predominant 
-    wind direction (avg all wind speed might give false alarm). Wind directions 
-    can be classified in either 4 or 8 regions (90 or 45 degrees).
-
-
 :Author: kmu
 :Created: 28. jan. 2011
 :Updated by RL on the 22. aug. 2013
@@ -39,7 +33,7 @@ Daily production usage:
 #---------------------------------------------------------    
 # Built-in
 #---------------------------------------------------------    
-import os, time
+import os, time, math
 from optparse import OptionParser
 
 #---------------------------------------------------------    
@@ -53,7 +47,7 @@ except ImportError:
     except ImportError:
         print '''WARNING: Can not find module "netCDF4" or "Scientific.IO.NetCDF"!
         Please install for netCDF file support.'''
-from numpy import sqrt, mean, flipud, zeros_like, arctan2, zeros, uint16, degrees, amax, where
+from numpy import sqrt, mean, flipud, zeros_like, arctan2, uint16, degrees, amax, where
 
 execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 
@@ -69,6 +63,8 @@ from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.converters import nan2fill
 from pysenorge.grid import interpolate_new
 from pysenorge.functions.lamberts_formula import LambertsFormula
+from pysenorge.functions.dominant_wind import dom_wind
+
 
 #---------------------------------------------------------    
 #import timenc from the Arome Data
@@ -92,25 +88,72 @@ def model(x_wind, y_wind):
     total_wind_avg = mean(total_wind, axis=0)
     wind_dir_cat = zeros_like(total_wind_avg)
     wind_dir = arctan2(y_wind, x_wind)
-      
+    max_wind = amax(total_wind[0:24,0:dims[1],0:dims[2]],axis=0)
+    new_wind_dir = degrees(wind_dir)
     print "Wind-data dimensions:", dims
     
 #---------------------------------------------------------    
-#Create max wind vector
-    max_wind = amax(total_wind[0:24,0:dims[1],0:dims[2]],axis=0)
-    new_wind_dir = degrees(wind_dir)
-
-    W = new_wind_dir[(new_wind_dir>=-22.5) & (new_wind_dir<22.5)]
-    SW = new_wind_dir[(new_wind_dir>=22.5) & (new_wind_dir<67.5)]
-    S = new_wind_dir[(new_wind_dir>=67.5) & (new_wind_dir<112.5)]
-    SE = new_wind_dir[(new_wind_dir>=112.5) & (new_wind_dir<157.5)]
-    NW = new_wind_dir[(new_wind_dir>-22.5) & (new_wind_dir<=-67.5)]
-    N = new_wind_dir[(new_wind_dir>-67.5) & (new_wind_dir<=-112.5)]
-    NE = new_wind_dir[(new_wind_dir>-112.5) & (new_wind_dir<=-157.5)]
-    E = new_wind_dir[(new_wind_dir<-157.5) | (new_wind_dir>=157.5) ]
-      
-    wind_dir_cat[:,:] = LambertsFormula(len(N),len(NE),len(E),len(SE),len(S),len(SW),len(W),len(NW))
-    
+#Create wind direction vector
+    for i in xrange(dims[1]):
+        for j in xrange(dims[2]):
+            N = 0
+            NE = 0
+            E =0
+            SE = 0
+            S = 0
+            SW = 0
+            W = 0
+            NW = 0
+            for k in xrange(dims[0]):
+                alpha = wind_dir[k,i,j]
+                degalpha = math.degrees(alpha)
+                if degalpha >= 0.0:
+                    if degalpha >=0.0 and degalpha<22.5:
+                        W += 1 
+                    elif degalpha >=22.5 and degalpha<67.5:
+                        SW += 1
+                    elif degalpha >=67.5 and degalpha<112.5:
+                        S += 1
+                    elif degalpha >=112.5 and degalpha<157.5:
+                        SE += 1
+                    elif degalpha >=157.5 and degalpha<=180.0:
+                        E += 1 
+                if degalpha < 0.0:
+                    if degalpha <0.0 and degalpha>=-22.5:
+                        W += 1
+                    elif degalpha <-22.5 and degalpha>=-67.5:
+                        NW += 1
+                    elif degalpha <-67.5 and degalpha>=-112.5:
+                        N += 1
+                    elif degalpha <-112.5 and degalpha>=-157.5:
+                        NE += 1
+                    elif degalpha <-157.5 and degalpha>=-180.0:
+                        E += 1
+                        
+                    
+            wind_dir_cat[i][j] = LambertsFormula(N, NE, E, SE, S, SW, W, NW)
+    print "-------------------------\n Done Part 1 \n-------------------------"
+       
+#---------------------------------------------------------    
+#Maximal wind in dominated wind direction
+     
+    new_test = zeros_like(wind_dir_cat)
+   
+    for i in xrange(dims[1]):
+        for j in xrange(dims[2]):
+            new_test = dom_wind(wind_dir_cat,1,-67.5,-112.5,wind_dir,total_wind,i,j,new_test,dims) #N
+            new_test = dom_wind(wind_dir_cat,2,-112.5,-157.5,wind_dir,total_wind,i,j,new_test,dims)#NE
+            new_test = dom_wind(wind_dir_cat,3,157.5,180,wind_dir,total_wind,i,j,new_test,dims)    #E
+            new_test = dom_wind(wind_dir_cat,3,-157.5,-180,wind_dir,total_wind,i,j,new_test,dims)  #E
+            new_test = dom_wind(wind_dir_cat,4,112.5,157.5,wind_dir,total_wind,i,j,new_test,dims)  #SE
+            new_test = dom_wind(wind_dir_cat,5,67.5,112.5,wind_dir,total_wind,i,j,new_test,dims)   #S
+            new_test = dom_wind(wind_dir_cat,6,22.5,67.5,wind_dir,total_wind,i,j,new_test,dims)    #SW
+            new_test = dom_wind(wind_dir_cat,7,0,22.5,wind_dir,total_wind,i,j,new_test,dims)       #W
+            new_test = dom_wind(wind_dir_cat,8,-22.5,-67.5,wind_dir,total_wind,i,j,new_test,dims)  #NW
+             
+    print "-------------------------\n Done Part 2 \n-------------------------"
+           
+                
 #---------------------------------------------------------    
 #Daily wind directions with 45 degrees
     #W
@@ -132,10 +175,12 @@ def model(x_wind, y_wind):
      
 #---------------------------------------------------------    
 #Return values
-    return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir
+    return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir, new_test
+
+
 
 #---------------------------------------------------------    
-#Start main program
+#Main program
 #---------------------------------------------------------    
 def main():
     """
@@ -287,17 +332,21 @@ def main():
 #Clip wind data to SEnorge grid 
 #---------------------------------------------------------    
     # Calculate the wind speed vector - using model() 
-    total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind = model(x_wind, y_wind) 
+    total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind,new_test = model(x_wind, y_wind) 
     
     # interpolate total average wind speed to seNorge grid
     total_wind_avg_intp = interpolate_new(total_wind_avg)
     max_wind_intp = interpolate_new(max_wind)
     wind_dir_intp = interpolate_new(wind_dir_cat)
+    new_test_intp = interpolate_new(new_test)
+    
 
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
     max_wind_intp = nan2fill(max_wind_intp)
     wind_dir_intp = nan2fill(wind_dir_intp)
+    new_test_intp = nan2fill(new_test_intp)
+
 
 #--------------------------------------------------------
 #Current wind prognosis based on the newest AROME input file
@@ -443,7 +492,7 @@ def main():
 #Option --png Write a PNG file
 #---------------------------------------------------------    
     if options.png:
-#----------------------------------------------------
+
         #null inside index removed
         writePNG(total_wind_avg_intp[:,:],
                 os.path.join(outdir1, outfile1),
@@ -483,7 +532,12 @@ def main():
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
     
-        #6hour Norgemaps winddirection
+        writePNG(new_test_intp[:,:],
+                  os.path.join(outdir1, 'wind_direction_new_test'),
+                  cltfile=r"/home/ralf/Dokumente/summerjob/data/max_wind_speed_10_no.clt"
+                  )
+      
+        #Six hour Norgemaps wind direction
         writePNG(hour_wind_intp_00[:,:],
                   os.path.join(outdir1, 'wind_direction_hour_00'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
@@ -506,7 +560,6 @@ def main():
 
     # At last - cross fingers* it all worked out! *and toes !!! 
     print "\n*** Finished successfully ***\n"
-
 
 def __clt_avg_wind_speed_no():
     from pysenorge.io.png import CLT, HDR, CLTitem
