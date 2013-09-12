@@ -40,7 +40,7 @@ def AdditionalSnowDepth(u, Umax=20.0):
         u = Umax
     k = 8e-5 # [s3 d-1 m-2]
     Hwind = k * u**3
-
+    
     return Hwind
 
 

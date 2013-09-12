@@ -19,12 +19,13 @@ from numpy import flipud, float32, zeros_like, uint16, clip
 from pysenorge.set_environment import BILout, UintFillValue
 from pysenorge.tools.date_converters import datetime2BILdate, iso2datetime,\
                                             get_hydroyear
-#from pysenorge.functions.snow_transport import AdditionalSnowDepth,\
-#                                              WindThresholdLi
 from pysenorge.io.bil import BILdata
 from pysenorge.grid import senorge_mask
+from pysenorge.functions import frozen_snow
 
-def model(u, nsd, lwc, age):
+
+#-----------------------------------------------------------------
+def model(u, nsd, lwc, age, frz):
     '''    
     Empirical formulation relating the additional snow depth |Hwind| deposited in lee
     slopes per day to the third power of the daily average wind speed u
@@ -75,27 +76,27 @@ def model(u, nsd, lwc, age):
     lwc3 = lwc >= 3
     lwc9 = lwc < 9
     lwc_moist = lwc3*lwc9 # moist snow, reduced wind transport
-#    lwc9 = lwc >= 9
-#    lwc251 = lwc < 251
-#    lwc_wet = lwc9*lwc251 # wet snow, no wind transport
-    
+
     Hwind = zeros_like(u) # init array
     uc = clip(u, 0, 20) # set wind speeds >20 m s-1 to 20 m s-1 - disregards the fact the higher wind speeds actually lead to weaker snow transport due to increased sublimation.
     k = 8e-5 # [s3 d-1 m-2]
     
+    mask = age_old*lwc_dry # reduced transport for dry, old snow
+    Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
+    
+    Hwind[frz] = 0 #Indexing of frozen snow and no movement 
+     
     mask = age_new*lwc_dry
     Hwind[mask] = k * uc[mask]**3 # additional snow depth after Foehn(1980)
     
     mask = age_new*lwc_moist # reduced transport for moist, new snow
     Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
     
-    mask = age_old*lwc_dry # reduced transport for dry, old snow
-    Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
-    
-    # No transport when snow is wet or old and moist    
+    # No transport when snow is wet, old, moist or frozen    
     
     return Hwind
 
+#-----------------------------------------------------------------
 def main():
     '''
     Loads and verifies input data, calls the model, and controls the output stream. 
@@ -126,7 +127,7 @@ def main():
     parser.add_option("--png",
                   action="store_true", dest="png", default=False,
                   help="Set to store output as PNG image")
-    # Comment to suppress help
+# Comment to suppress help
 #    parser.print_help()
 
     (options, args) = parser.parse_args()
@@ -194,15 +195,20 @@ def main():
             os.system('mkdir %s' % themedir)
         os.chdir(options.outdir)
         os.system('mkdir %s' % str(get_hydroyear(cdt)))
-        
+    
+    #New frozen snow module
+    frz = frozen_snow.frozen()
+    frz.load_data(os.path.join(BILout, "ssttm", str(get_hydroyear(cdt)), "Fehlt noch der Pfad"))
+    frz.check_value(frz.tsi)    
     
     # Calculate additional snow depth due to wind
     #Hwind = __model(wind.data, sd.data)
-    Hwind = model(wind.data, sd.data, lwc.data, age.data)
+    Hwind = model(wind.data, sd.data, lwc.data, age.data, frz.idex)
     # Set no-data values to UintFillValue
+    #print Hwind
+    
     mask = senorge_mask()
     Hwind[mask] = UintFillValue
-    
     
     if options.bil:
         # Write to BIL file
@@ -246,6 +252,5 @@ def main():
     # At last - cross fingers it all worked out!
     print "\n*** Finished successfully ***\n"
     
-
 if __name__ == '__main__':
     main()

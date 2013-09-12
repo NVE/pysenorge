@@ -9,7 +9,7 @@ import os
 import glob
 import datetime
 # Adds folder containing the "pysenorge" package to the PYTHONPATH @UnusedImport
-execfile("./themes/set_pysenorge_path.py") 
+execfile("../themes/set_pysenorge_path.py") 
 # Additional
 from numpy import flipud, float32
 # Own
@@ -36,8 +36,6 @@ def BIL2PNG(BILfile, BILdtype='uint16', CLTfile=None, outdir=os.getcwd()):
     outfile = os.path.splitext(BILfile)[0]
     
     wdata = float32(flipud(bd.data))*0.1
-    print wdata.shape
-    print type(wdata)
     # Write to PNG file
     writePNG(wdata, os.path.join(outdir, outfile), CLTfile)
     

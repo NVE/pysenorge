@@ -38,7 +38,7 @@ def BIL2netCDF(BILfile, BILdtype='uint16', outdir=os.getcwd(), theme_name='undef
     ncfilename = os.path.splitext(os.path.basename(BILfile))[0] + '.nc'
     bd = BILdata(BILfile, BILdtype)
     bd.read()
-    yy, mm, dd = get_date_filename(BILfile)
+    yy, mm, dd = "13", "09", "11"
     tstring = yy+'-'+mm+'-'+dd+' 06:00:00'
     secs = date2num(iso2datetime(tstring), timeunit)
     mask = flipud(senorge_mask())
@@ -52,9 +52,12 @@ def BIL2netCDF(BILfile, BILdtype='uint16', outdir=os.getcwd(), theme_name='undef
                         long_name, ncdata, lsd=1)
     ncfile.close()
 
+# BILfile, BILdtype='uint16', outdir=os.getcwd(), theme_name='undefined',
+#                theme_unit='undefined', long_name='undefined'):
+
 def _test():
-    BIL2netCDF(r'Z:\snowsim\swe\2000\swe_2000_01_27.bil', 'uint16', r'C:', 'swe', 'mm',
-               'snow water equivalent')
+    BIL2netCDF(BILfile='/home/ralf/Dokumente/summerjob/data/sdmyr30yr_19812010.bil',
+               BILdtype='uint16', outdir="/home/ralf/Dokumente/summerjob/data/", theme_name='cm-snoe', theme_unit='cm', long_name='Average snow highed from 1981 until 2010')
 
 if __name__ == '__main__':
     _test()
