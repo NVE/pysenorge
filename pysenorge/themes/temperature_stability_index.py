@@ -4,8 +4,8 @@
 Shows potential changes in snow stability based on temperature and temperature gradient history.
 
 @author: kmu
-@update: Ralf Loritz 11.09.2013
 @since: 4. oct. 2010
+@updated by RL 11. sep. 2013
 '''
 # Built-in
 import os
@@ -42,6 +42,7 @@ def model(tm, tmgr, nodata_mask):
     '''
     ssttm = zeros(tmgr.shape, dtype=uint16)
     dims = tmgr.shape
+    print tmgr.shape
     for i in xrange(dims[0]):
         for j in xrange(dims[1]):
             if nodata_mask[i][j]==False: # only consider values that contain data
@@ -56,7 +57,6 @@ def model(tm, tmgr, nodata_mask):
                     ssttm[i][j] = 4 # drastically decreased stability
                 else:
                     ssttm[i][j] = 0 
-                
     return ssttm
             
 def main():
@@ -70,6 +70,7 @@ def main():
     # Setup input parser
     usage = "usage: python //~HOME/pysenorge/themes/temperature_stability_index.py tm_DATE.bil tmgr_DATE.bil [options]"
     
+    #Add options
     parser = OptionParser(usage=usage)
     parser.add_option("-o", "--outdir", 
                       action="store", dest="outdir", type="string",
@@ -78,11 +79,9 @@ def main():
     parser.add_option("--no-bil",
                   action="store_false", dest="bil", default=True,
                   help="Set to suppress output in BIL format")
-    #-----------------------------------------------------------------
+    
     # Comment to suppress help
     #    parser.print_help()
-    #-----------------------------------------------------------------
-    
     (options, args) = parser.parse_args()
 #         
 #     # Verify input parameters
@@ -137,9 +136,6 @@ def main():
     ssttm = model(ftm, ftmgr, mask)
     ssttm[mask] = UintFillValue
     
-    print len(ssttm[ssttm>5])
-    print len(ftm[ftm>=16])
-    
     if options.bil:
         # Write to BIL file
         bilfile = BILdata(os.path.join(outdir, outfile+'.bil'), datatype="uint16")
@@ -180,7 +176,27 @@ def _view(filename):
         
     except ImportError:
         print '''Required plotting module "matplotlib" not found!\nVisit www.matplotlib.sf.net'''
+
+def __clt_tsi():
+    '''
+    Creates CLT file for temperature-stability index bil file.
+    '''
     
+    from pysenorge.io.png import CLT, HDR, CLTitem
+    hdr = HDR(255, 8,
+              'Temperatur-stability index',
+              '',
+              'Stability')
+    cltlist = [CLTitem(-0.5, 0.5, (211,211,211), 'not classified'),
+               CLTitem(0.5, 1.5, (64, 224, 208), 'unchanged'),
+               CLTitem(1.5,2.5, (255,99,71), 'increase'),
+               CLTitem(2.5,3.5, (50,205,50), 'decrease'),
+               CLTitem(3.5, 4.5, (255,0,0), 'drastic decrease')]
+    cltfile = CLT()
+    cltfile.new(hdr, cltlist)
+    cltfile.write("/home/ralf/Dokumente/summerjob/data/test.clt")
+    print 'Created CLT file for temperature-stability index'
+
 if __name__ == "__main__":
-    main()
-    #_view("/home/ralf/Dokumente/summerjob/data/netCDF/ssttm/12/ssttm_12_09_03.bil")
+    #main()
+    __clt_tsi()

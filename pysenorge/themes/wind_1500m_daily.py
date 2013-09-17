@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+from deap.benchmarks.tools import numpy
 __docformat__ = 'reStructuredText'
 '''
 Calculates the average wind velocity based on hourly wind vector data.
@@ -340,22 +341,20 @@ def main():
     wind_dir_intp = interpolate_new(wind_dir_cat)
     dom_wind_tab_intp = interpolate_new(dom_wind_tab)
     
-
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
     max_wind_intp = nan2fill(max_wind_intp)
     wind_dir_intp = nan2fill(wind_dir_intp)
     dom_wind_tab_intp = nan2fill(dom_wind_tab_intp)
 
-
 #--------------------------------------------------------
 #Current wind prognosis based on the newest AROME input file
 #--------------------------------------------------------
     if timenc == "00":
-    #at 00:00
+        #at 00:00
         wind_00 = interpolate_new(total_wind[0,:,:])
         hour_wind_intp_00 = interpolate_new(hour_wind[0,:,:])
-    #at 06:00
+        #at 06:00
         wind_06 = interpolate_new(total_wind[6,:,:])
         hour_wind_intp_06 = interpolate_new(hour_wind[6,:,:])
     #at 12:00
@@ -364,49 +363,49 @@ def main():
     #at 18:00
         wind_18 = interpolate_new(total_wind[18,:,:])
         hour_wind_intp_18 = interpolate_new(hour_wind[18,:,:])
-
+ 
     elif timenc == "06":
     #at 06:00
         wind_06 = interpolate_new(total_wind[0,:,:])
         hour_wind_intp_06 = interpolate_new(hour_wind[0,:,:])
-    #at 12:00
+        #at 12:00
         wind_12 = interpolate_new(total_wind[6,:,:])
         hour_wind_intp_12 = interpolate_new(hour_wind[6,:,:])
-    #at 18:00
+        #at 18:00
         wind_18 = interpolate_new(total_wind[12,:,:])
         hour_wind_intp_18 = interpolate_new(hour_wind[12,:,:])
-    #at 00:00
+        #at 00:00
         wind_00 = interpolate_new(total_wind[18,:,:])
         hour_wind_intp_00 = interpolate_new(hour_wind[18,:,:])
-    
+     
     elif timenc == "12":
-    #at 12:00
+        #at 12:00
         wind_12 = interpolate_new(total_wind[0,:,:])
         hour_wind_intp_12 = interpolate_new(hour_wind[0,:,:])
-    #at 18:00
+        #at 18:00
         wind_18 = interpolate_new(total_wind[6,:,:])
         hour_wind_intp_18 = interpolate_new(hour_wind[6,:,:])
-    #at 00:00
+        #at 00:00
         wind_00 = interpolate_new(total_wind[12,:,:])
         hour_wind_intp_00 = interpolate_new(hour_wind[12,:,:])
-    #at 06:00
+        #at 06:00
         wind_06 = interpolate_new(total_wind[18,:,:])
         hour_wind_intp_06 = interpolate_new(hour_wind[18,:,:])
-    
+     
     elif timenc == "18":
-    #at 18:00
+        #at 18:00
         wind_18 = interpolate_new(total_wind[0,:,:])
         hour_wind_intp_18 = interpolate_new(hour_wind[0,:,:])
-    #at 00:00
+        #at 00:00
         wind_00 = interpolate_new(total_wind[6,:,:])
         hour_wind_intp_00 = interpolate_new(hour_wind[6,:,:])
-    #at 06:00
+        #at 06:00
         wind_06 = interpolate_new(total_wind[12,:,:])
         hour_wind_intp_06 = interpolate_new(hour_wind[12,:,:])
-    #at 12:00
+        #at 12:00
         wind_12 = interpolate_new(total_wind[18,:,:])
         hour_wind_intp_12 = interpolate_new(hour_wind[18,:,:])
-    
+     
 #---------------------------------------------------------
 #Option --bil => Multiplied by 10 to store data as integer
 #---------------------------------------------------------    

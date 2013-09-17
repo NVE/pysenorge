@@ -4,6 +4,7 @@ Wind-transported snow
 
 :Author: kmu
 :Created: 11. may 2011
+:Updated by RL 12. Sep. 2013
 
 '''
 # Built-in
@@ -21,8 +22,10 @@ from pysenorge.tools.date_converters import datetime2BILdate, iso2datetime,\
                                             get_hydroyear
 from pysenorge.io.bil import BILdata
 from pysenorge.grid import senorge_mask
-from pysenorge.functions import frozen_snow
+from pysenorge.functions import frozen_snow #added in latest version
 
+#NEED TO DELETE LATER
+BILout = "/home/ralf/Dokumente/summerjob/data/add"
 
 #-----------------------------------------------------------------
 def model(u, nsd, lwc, age, frz):
@@ -31,7 +34,8 @@ def model(u, nsd, lwc, age, frz):
     slopes per day to the third power of the daily average wind speed u
     (u<=20 m |s-1|). The model is only valid for blowing snow. For each new snow event
     the additional loading in lee slopes is calculated. Snow drift of already
-    deposited snow is not taken into account at the moment.
+    deposited snow is not taken into account at the moment. Also frozen snow is not going to be 
+    transported unless there new snow has fallen.
     
     The threshold wind speed (|Ut|) depends on the friction between the snow surface and
     air. Li & Pomeroy (1997) proposed an empirical relationship based on 2 m air
@@ -49,10 +53,6 @@ def model(u, nsd, lwc, age, frz):
         - Foehn, P. M. B. (1980). Snow transport over mountain crests. Journal of Glaciology, 26(94).
         - Meister, R., Influence of strong winds on snow distribution and avalanche activity, Ann. Glac., 13, pp.195-201, 1989 
         - Schweizer, J. (2003). Snow avalanche formation. Reviews of Geophysics, 41(4)
-    
-    **ToDo:**
-        - Use LWC<3> to separate threshold values 4 and 7 m |s-1|
-        - High LWC and refreezing needs to be remembered until next snowfall. No snow transport after refreezing! Use a .npy file to store if refrozen snow has been covered by new snow again.
         
     **Done:**
         - Differentiate between blowing and drifting snow: Blowing snow only under snow fall.
@@ -84,7 +84,8 @@ def model(u, nsd, lwc, age, frz):
     mask = age_old*lwc_dry # reduced transport for dry, old snow
     Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
     
-    Hwind[frz] = 0 #Indexing of frozen snow and no movement 
+    #Added at the latest version of additonal-snow map
+    Hwind[frz] = 0 #Setting value to 0 where frozen snow occur 
      
     mask = age_new*lwc_dry
     Hwind[mask] = k * uc[mask]**3 # additional snow depth after Foehn(1980)
@@ -99,7 +100,7 @@ def model(u, nsd, lwc, age, frz):
 #-----------------------------------------------------------------
 def main():
     '''
-    Loads and verifies input data, calls the model, and controls the output stream. 
+    Loads and verifies input data, calls the models, and controls the output stream. 
     
     Command line usage::
     
@@ -127,22 +128,24 @@ def main():
     parser.add_option("--png",
                   action="store_true", dest="png", default=False,
                   help="Set to store output as PNG image")
-# Comment to suppress help
-#    parser.print_help()
-
+    
+    # Comment to suppress help
+    # parser.print_help()
     (options, args) = parser.parse_args()
     
     if len(args) != 1:
         parser.error("Please provide the date in ISO format YYYY-MM-DD!")
         parser.print_help() 
     
-    # get current datetime
+    # Get current datetime
     cdt = iso2datetime(args[0]+" 06:00:00")
     windfilename = "wind_speed_avg_10m_%s.bil" % datetime2BILdate(cdt)
     
-    # Add full path to the filename load wind_data
-    windfile = os.path.join(BILout, "wind_speed_avg_10m", str(get_hydroyear(cdt)),
-                            windfilename)
+    #----------------------------------------------------------------------------
+    # Import wind-speed 10m map 
+    # windfile = os.path.join(BILout, "wind_speed_avg_10m", str(get_hydroyear(cdt)),windfilename)
+    windfile = os.path.join(BILout, windfilename)
+    
     if not os.path.exists(windfile):
         parser.error("BIL file %s containing wind data does not exist!" %\
                      windfile)
@@ -153,20 +156,25 @@ def main():
         # convert to Celsius
         wind.data = float32(wind.data)*0.1 #multiplyed by 0.1 because of in integer values in wind_model
     
-    #import 
+    #----------------------------------------------------------------------------
+    #import snow-depth map 
     sdfilename = "sdfsw_%s.bil" % datetime2BILdate(cdt)
-    sdfile = os.path.join(BILout, "sdfsw", str(get_hydroyear(cdt)), sdfilename)
-        
+    #sdfile = os.path.join(BILout, "sdfsw", str(get_hydroyear(cdt)), sdfilename)
+    sdfile = os.path.join(BILout, sdfilename)
+         
     if not os.path.exists(sdfile):
         parser.error("BIL file %s containing snow-depth data does not exist!" %\
                      sdfile)
     else:
         sd = BILdata(sdfile, 'uint16')
         sd.read()
-        
+    
+    #----------------------------------------------------------------------------
+    #import snow-age map 
     agefilename = "age_%s.bil" % datetime2BILdate(cdt)
-    agefile = os.path.join(BILout, "age", str(get_hydroyear(cdt)), agefilename)
-        
+    #agefile = os.path.join(BILout, "age", str(get_hydroyear(cdt)), agefilename)
+    agefile = os.path.join(BILout, agefilename)
+    
     if not os.path.exists(agefile):
         parser.error("BIL file %s containing snow-age data does not exist!" %\
                      agefile)
@@ -174,18 +182,28 @@ def main():
         age = BILdata(agefile, 'uint8')
         age.read()
     
+    #----------------------------------------------------------------------------
+    #import liquid-water-content map 
     lwcfilename = "lwc_%s.bil" % datetime2BILdate(cdt)
-    lwcfile = os.path.join(BILout, "lwc", str(get_hydroyear(cdt)), lwcfilename)
-        
+    #lwcfile = os.path.join(BILout, "lwc", str(get_hydroyear(cdt)), lwcfilename)
+    lwcfile = os.path.join(BILout, lwcfilename)
+     
     if not os.path.exists(lwcfile):
         parser.error("BIL file %s containing snow-LWC data does not exist!" %\
                      lwcfile)
     else:
         lwc = BILdata(lwcfile, 'uint8')
         lwc.read()
-#    from pysenorge.tools.show_histogram import Histogram
-#    Histogram(sd.data, R=(0, 2000))
-    
+
+    #----------------------------------------------------------------------------
+    #Calculate and import frozen-snow map 
+    try:
+        frz = frozen_snow.frozen()
+        frz.load_data(os.path.join(BILout, "ssttm_2013_01_13.bil"))
+        frz.check_value(frz.tsi)    
+    except (IOError,NameError):
+        print "Couldn't find or load frozen-snow map"
+
     # Setup outputs
     outfile = themedir+'_'+datetime2BILdate(cdt)
     outdir = os.path.join(options.outdir, str(get_hydroyear(cdt)))
@@ -196,20 +214,14 @@ def main():
         os.chdir(options.outdir)
         os.system('mkdir %s' % str(get_hydroyear(cdt)))
     
-    #New frozen snow module
-    frz = frozen_snow.frozen()
-    frz.load_data(os.path.join(BILout, "ssttm", str(get_hydroyear(cdt)), "Fehlt noch der Pfad"))
-    frz.check_value(frz.tsi)    
-    
-    # Calculate additional snow depth due to wind
-    #Hwind = __model(wind.data, sd.data)
+    #Run additional-snow map model
     Hwind = model(wind.data, sd.data, lwc.data, age.data, frz.idex)
-    # Set no-data values to UintFillValue
-    #print Hwind
     
+    # Set no-data values to UintFillValue
     mask = senorge_mask()
     Hwind[mask] = UintFillValue
     
+    #Option create bil-file
     if options.bil:
         # Write to BIL file
         bilfile = BILdata(os.path.join(outdir, outfile+'.bil'),
@@ -217,17 +229,10 @@ def main():
         Hwind = uint16(Hwind*1000)
         Hwind[mask] = UintFillValue
         
-#        import pylab
-#        pylab.imshow(Hwind, vmin=0, vmax=300, cmap=pylab.cm.gist_stern)
-#        pylab.colorbar()
-#        pylab.show()
-        
-#        from pysenorge.tools.show_histogram import Histogram
-#        Histogram(Hwind, R=(0, 500))
-        
         biltext = bilfile.write(Hwind)
         print biltext
     
+    #Option create nc-file
     if options.nc:
         from pysenorge.io.nc import NCdata
         # Prepare data
@@ -236,17 +241,16 @@ def main():
         # Write to NC file
         ncfile = NCdata(os.path.join(outdir, outfile+'.nc'))
         ncfile.zip = True
-#        secs = date2num(cdt, timeunit) # used in NCdata.new()
-#        ncfile.new(secs)
         ncfile.add_variable(themedir, ncHwind.dtype.str, "m",
                             themename, ncHwind)
         ncfile.close()
     
+    #Option create png imagefile
     if options.png:
         from pysenorge.io.png import writePNG
         # Write to PNG file
         writePNG(flipud(Hwind), os.path.join(outdir, outfile),
-                 cltfile=os.path.join(BILout, themedir, "Hwind.clt")
+                 cltfile=os.path.join("/home/ralf/Dokumente/summerjob/data/additional_snow_depth_wind.clt")
                  )
         
     # At last - cross fingers it all worked out!

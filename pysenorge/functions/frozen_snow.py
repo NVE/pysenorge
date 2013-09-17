@@ -11,7 +11,6 @@ import numpy as np
 
 #Own
 from pysenorge.io.bil import BILdata
-from statsmodels.stats.weightstats import tstat_generic
 
 class frozen:
     def load_data(self,ssttm): 
@@ -20,7 +19,7 @@ class frozen:
         self.tsi = tsi.data
         
     def check_value(self,tsi):    
-        self.idex = np.where(tsi==0)
+        self.idex = np.where(tsi==2)
         
 if __name__ == "__main__":
     tst=frozen()

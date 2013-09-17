@@ -139,10 +139,4 @@ def _additional_snow_depth():
 #            print "Could not convert %s" % f
             
 if __name__ == '__main__':
-#    _test()
-#    _depth_hoar_1()
-#    _wind_direction_1500m()
-#    _wind_speed_max_10m()
-#    _wind_speed_avg_10m()
-    _additional_snow_depth()
-#    _depth_hoar_2()
+    
