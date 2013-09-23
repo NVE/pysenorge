@@ -72,7 +72,7 @@ def model(u, nsd, lwc, age, frz):
     age_new = age < 2 # fresh snow, same transport as under snow fall
     age_old = age >= 2 # older snow, transport depends on LWC
     
-    lwc_dry= lwc < 3
+    lwc_dry = lwc < 3
     lwc3 = lwc >= 3
     lwc9 = lwc < 9
     lwc_moist = lwc3*lwc9 # moist snow, reduced wind transport
@@ -80,16 +80,16 @@ def model(u, nsd, lwc, age, frz):
     Hwind = zeros_like(u) # init array
     uc = clip(u, 0, 20) # set wind speeds >20 m s-1 to 20 m s-1 - disregards the fact the higher wind speeds actually lead to weaker snow transport due to increased sublimation.
     k = 8e-5 # [s3 d-1 m-2]
-    
-    mask = age_old*lwc_dry # reduced transport for dry, old snow
+
+    mask = age_old * lwc_dry # reduced transport for dry, old snow
     Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
-    
+
     #Added at the latest version of additonal-snow map
     Hwind[frz] = 0 #Setting value to 0 where frozen snow occur 
-     
-    mask = age_new*lwc_dry
+
+    mask = age_new * lwc_dry
     Hwind[mask] = k * uc[mask]**3 # additional snow depth after Foehn(1980)
-    
+
     mask = age_new*lwc_moist # reduced transport for moist, new snow
     Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
     

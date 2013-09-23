@@ -56,8 +56,8 @@ def BIL2netCDF(BILfile, BILdtype='uint16', outdir=os.getcwd(), theme_name='undef
 #                theme_unit='undefined', long_name='undefined'):
 
 def _test():
-    BIL2netCDF(BILfile='/home/ralf/Dokumente/summerjob/data/sdmyr30yr_19812010.bil',
-               BILdtype='uint16', outdir="/home/ralf/Dokumente/summerjob/data/", theme_name='cm-snoe', theme_unit='cm', long_name='Average snow highed from 1981 until 2010')
+    BIL2netCDF(BILfile='/home/ralf/Downloads/rrsc_winter_normal_1981-2010.bil',
+               BILdtype='uint16', outdir="/home/ralf/Dokumente/summerjob/data/", theme_name='mm-snoe', theme_unit='mm', long_name='Hoeydekorrigert i vinternormal 1981-2010')
 
 if __name__ == '__main__':
     _test()

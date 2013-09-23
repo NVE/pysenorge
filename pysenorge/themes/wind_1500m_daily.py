@@ -22,8 +22,6 @@ Daily production usage:
 
 *Todo:*
 - Make a test that checks that the 3-D matrix is multiplied correctly.
-- Add a theme showing max wind gust last 24 h.
-- Add a theme showing prevailing wind direction last 24 h.
 
 :Author: kmu
 :Created: 28. jan. 2011
@@ -31,15 +29,16 @@ Daily production usage:
 '''
 
 ''' IMPORTS '''
-#---------------------------------------------------------    
+#---------------------------------------------------------
 # Built-in
-#---------------------------------------------------------    
-import os, time, math
-from optparse import OptionParser
+#---------------------------------------------------------
+import os
+import time
 
-#---------------------------------------------------------    
+from optparse import OptionParser
+#---------------------------------------------------------
 # Additional modules
-#---------------------------------------------------------    
+#---------------------------------------------------------
 try:
     from netCDF4 import Dataset
 except ImportError:
@@ -48,13 +47,14 @@ except ImportError:
     except ImportError:
         print '''WARNING: Can not find module "netCDF4" or "Scientific.IO.NetCDF"!
         Please install for netCDF file support.'''
-from numpy import sqrt, mean, flipud, zeros_like, arctan2, uint16, degrees, amax, where
 
 execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 
-#---------------------------------------------------------    
+from numpy import flipud, uint16
+
+#---------------------------------------------------------
 # Own modules
-#---------------------------------------------------------    
+#---------------------------------------------------------
 from pysenorge.set_environment import netCDFin, BILout, FloatFillValue, \
                                       UintFillValue
 from pysenorge.io.bil import BILdata
@@ -63,156 +63,43 @@ from pysenorge.io.png import writePNG
 from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.converters import nan2fill
 from pysenorge.grid import interpolate_new
-from pysenorge.functions.lamberts_formula import LambertsFormula
-from pysenorge.functions.dominant_wind import dom_wind
+from pysenorge.functions.wind_model import model
+from pysenorge.tools.get_timenc import _time_fun
 
-
-#---------------------------------------------------------    
-#import timenc from the Arome Data
-#---------------------------------------------------------    
- 
-#---------------------------------------------------------    
-#Define wind model
-#---------------------------------------------------------    
-def model(x_wind, y_wind):
-    """
-    Calculates avg. and max. wind speed and prevailing wind direction from the
-    x and y vector components.
-      
-    :Parameters:
-        - x_wind: Wind vector component in *x*-direction
-        - y_wind: Wind vector component in *y*-direction
-    """    
-    
-    total_wind = sqrt(x_wind**2 + y_wind**2)
-    dims = total_wind.shape
-    total_wind_avg = mean(total_wind, axis=0)
-    wind_dir_cat = zeros_like(total_wind_avg)
-    wind_dir = arctan2(y_wind, x_wind)
-    max_wind = amax(total_wind[0:24,0:dims[1],0:dims[2]],axis=0)
-    new_wind_dir = degrees(wind_dir)
-    print "Wind-data dimensions:", dims
-    
-#---------------------------------------------------------    
-#Create wind direction vector
-    for i in xrange(dims[1]):
-        for j in xrange(dims[2]):
-            N = 0
-            NE = 0
-            E =0
-            SE = 0
-            S = 0
-            SW = 0
-            W = 0
-            NW = 0
-            for k in xrange(dims[0]):
-                alpha = wind_dir[k,i,j]
-                degalpha = math.degrees(alpha)
-                if degalpha >= 0.0:
-                    if degalpha >=0.0 and degalpha<22.5:
-                        W += 1 
-                    elif degalpha >=22.5 and degalpha<67.5:
-                        SW += 1
-                    elif degalpha >=67.5 and degalpha<112.5:
-                        S += 1
-                    elif degalpha >=112.5 and degalpha<157.5:
-                        SE += 1
-                    elif degalpha >=157.5 and degalpha<=180.0:
-                        E += 1 
-                if degalpha < 0.0:
-                    if degalpha <0.0 and degalpha>=-22.5:
-                        W += 1
-                    elif degalpha <-22.5 and degalpha>=-67.5:
-                        NW += 1
-                    elif degalpha <-67.5 and degalpha>=-112.5:
-                        N += 1
-                    elif degalpha <-112.5 and degalpha>=-157.5:
-                        NE += 1
-                    elif degalpha <-157.5 and degalpha>=-180.0:
-                        E += 1
-                        
-                    
-            wind_dir_cat[i][j] = LambertsFormula(N, NE, E, SE, S, SW, W, NW)
-    print "-------------------------\n Done Part 1 \n-------------------------"
-       
-#---------------------------------------------------------    
-#Calculate maximal wind speed in dominant wind direction
-     
-    dom_wind_tab = zeros_like(wind_dir_cat)
-   
-    for i in xrange(dims[1]):
-        for j in xrange(dims[2]):
-            dom_wind_tab = dom_wind(wind_dir_cat,1,-67.5,-112.5,wind_dir,total_wind,i,j,dom_wind_tab,dims) #N
-            dom_wind_tab = dom_wind(wind_dir_cat,2,-112.5,-157.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)#NE
-            dom_wind_tab = dom_wind(wind_dir_cat,3,157.5,180,wind_dir,total_wind,i,j,dom_wind_tab,dims)    #E
-            dom_wind_tab = dom_wind(wind_dir_cat,3,-157.5,-180,wind_dir,total_wind,i,j,dom_wind_tab,dims)  #E
-            dom_wind_tab = dom_wind(wind_dir_cat,4,112.5,157.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)  #SE
-            dom_wind_tab = dom_wind(wind_dir_cat,5,67.5,112.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)   #S
-            dom_wind_tab = dom_wind(wind_dir_cat,6,22.5,67.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)    #SW
-            dom_wind_tab = dom_wind(wind_dir_cat,7,0,22.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)       #W
-            dom_wind_tab = dom_wind(wind_dir_cat,8,-22.5,-67.5,wind_dir,total_wind,i,j,dom_wind_tab,dims)  #NW
-             
-    print "-------------------------\n Done Part 2 \n-------------------------"
-           
-                
-#---------------------------------------------------------    
-#Daily wind directions with 45 degrees
-    #W
-    hour_wind_dir = where((new_wind_dir>=-22.5) & (new_wind_dir<22.5),6, new_wind_dir)
-    #SW
-    hour_wind_dir = where((hour_wind_dir>=22.5) & (hour_wind_dir<67.5),5, hour_wind_dir)
-    #S
-    hour_wind_dir = where((hour_wind_dir>=67.5) & (hour_wind_dir<112.5),4, hour_wind_dir)
-    #SE
-    hour_wind_dir = where((hour_wind_dir>=112.5) & (hour_wind_dir<157.5),3, hour_wind_dir)
-    #NW
-    hour_wind_dir = where((hour_wind_dir>-22.5) & (hour_wind_dir<=-67.5),7, hour_wind_dir)
-    #N
-    hour_wind_dir = where((hour_wind_dir>-67.5) & (hour_wind_dir<=-112.5),0, hour_wind_dir)
-    #NE
-    hour_wind_dir = where((hour_wind_dir>-112.5) & (hour_wind_dir<=-157.5),1, hour_wind_dir)
-    #E
-    hour_wind_dir = where((hour_wind_dir<-157.5) | (hour_wind_dir>=157.5) ,2, hour_wind_dir)
-     
-#---------------------------------------------------------    
-#Return values
-    return total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind_dir, dom_wind_tab
-
-
-
-#---------------------------------------------------------    
+#---------------------------------------------------------
 #Main program
-#---------------------------------------------------------    
+#---------------------------------------------------------
 def main():
     """
-    Loads and verifies input data, calls the model, and controls the output stream. 
-    
+    Loads and verifies input data, calls the model, and controls the output stream.
+
     Command line usage::
-    
+
         python //~HOME/pysenorge/themes/wind_10m_daily.py YYYY-MM-DD [options]
     """
 #---------------------------------------------------------    
 #Timenc variable is comes from the inputdata and should be according to the Aromemodell
 #either "00","06","12","18"
-    
+
     timenc = "00"
-    
+
     # Theme variables
-    themedir1 = 'wind_speed_avg_1500m' 
+    themedir1 = 'wind_speed_avg_1500m'
     themedir2 = 'wind_speed_max_1500m'
-    
+
     # Setup input parser
-    usage = "usage: python //~HOME/pysenorge/theme_layers/average_windspeed_daily.py YYYY-MM-DD [options]"
+    usage = "usage: python //~HOME/pysenorge/theme_layers/ \
+            average_windspeed_daily.py YYYY-MM-DD NC-File [options]"
 
 #---------------------------------------------------------
 #add options with parser module
-#---------------------------------------------------------    
+#---------------------------------------------------------
     #timerange
     parser = OptionParser(usage=usage)
-    parser.add_option("-t", "--timerange", 
+    parser.add_option("-t", "--timerange",
                       action="store", dest="timerange", type="string",
                       default="[0,24]",
-                      help='''Time-range as "[6,30]"''')
+                      help='''Time-range as "[0,24]"''')
     #create no bil
     parser.add_option("--no-bil",
                   action="store_false", dest="bil", default=True,
@@ -225,22 +112,32 @@ def main():
     parser.add_option("--png",
                   action="store_true", dest="png", default=False,
                   help="Set to store output as PNG image")
-    
+
 #   Comment to suppress help
 #   parser.print_help()
     (options, args) = parser.parse_args()
 
     # Verify input parameters
-    if len(args) != 1:
+    if len(args) != 2:
         parser.error("Please provide the date in ISO format YYYY-MM-DD!")
-        parser.print_help() 
+        parser.print_help()
+
     
-    #ncfile = os.path.join(netCDFin, "2013", ncfilename)
-    ncfile = "/home/ralf/Dokumente/summerjob/data/2013/AROME_WIND_850_%s_NVE.nc" %timenc
+    #Select which date
+    yr = str(args[0].split("-")[0])
+    mon = str(args[0].split("-")[1])
+    day = str(args[0].split("-")[2])
+
+    #Select which nc-file
+    timearg = args[1]
+    
+    load_date = "%s_%s_%s" % (yr, mon, day)
+    
+    ncfilename = "AROME_WIND_850_NVE_%s_%s.nc" % (timearg, load_date)
+    ncfile = os.path.join(netCDFin, "2013", ncfilename)
     
     timerange = eval(options.timerange)
-    #timerange = None
-    
+
     print 'Time-range', timerange
     #test if path of the netCDF file exists
     if not os.path.exists(ncfile):
@@ -250,40 +147,45 @@ def main():
             # Load wind data from prognosis (netCDF file) for entire time-range
             ds = Dataset(ncfile, 'r')
             wind_time = ds.variables['time'][:]
-            x_wind = ds.variables['x_wind_850hpa'][:,:,:]
-            y_wind = ds.variables['y_wind_850hpa'][:,:,:]
+            x_wind = ds.variables['x_wind_850hpa'][:, :, :]
+            y_wind = ds.variables['y_wind_850hpa'][:, :, :]
             ds.close()
         else:
             # Load wind data from prognosis (netCDF file) for selected time-range
             ds = Dataset(ncfile, 'r')
             wind_time = ds.variables['time'][timerange[0]:timerange[1]]
-            x_wind = ds.variables['x_wind_850hpa'][timerange[0]:timerange[1],:,:]
-            y_wind = ds.variables['y_wind_850hpa'][timerange[0]:timerange[1],:,:]
+            x_wind = ds.variables['x_wind_850hpa'][timerange[0]:timerange[1], :, :]
+            y_wind = ds.variables['y_wind_850hpa'][timerange[0]:timerange[1], :, :]
             ds.close()
-    
+
     print "Using input data from file %s" % ncfile
 
+#Get timenc
+    ob_time = time.strftime("%H",time.gmtime(wind_time[0]))            
+
+    timenc = _time_fun(ob_time)
+    
 #---------------------------------------------------------
-#Output paths and output filenames  
-#---------------------------------------------------------    
+#Output paths and output filenames
+#---------------------------------------------------------
     _tstart = time.gmtime(wind_time[0])
     tstruct = time.gmtime(wind_time[-1]) # or -1 if it should be the average until that date
     begin_time = time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(wind_time[0]))
     end_time = time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(wind_time[23]))
-    
-    print "For the period from the",begin_time ,"to", end_time
-    
+
+    print "For the period from the", begin_time, "to", end_time
+
     outfile1 = '%s_%s_%s_%s' % (themedir1, str(tstruct.tm_year).zfill(4),
                                str(tstruct.tm_mon).zfill(2),
                                str(tstruct.tm_mday).zfill(2))
     outfile2 = '%s_%s_%s_%s' % (themedir2, str(tstruct.tm_year).zfill(4),
                                str(tstruct.tm_mon).zfill(2),
                                str(tstruct.tm_mday).zfill(2))
-    
-    cdt = iso2datetime(args[0]+" 06:00:00")
+
+    cdt = iso2datetime(args[0] + " 06:00:00")
 
 #---------------------------------------------------------
-#Output path 1  
+#Output path 1
     outdir1 = os.path.join(BILout, themedir1, str(get_hydroyear(cdt)))
     if not os.path.exists(outdir1):
         if not os.path.exists(os.path.join(BILout, themedir1)):
@@ -293,7 +195,7 @@ def main():
         os.system('mkdir %s' % str(get_hydroyear(cdt)))
 
 #---------------------------------------------------------
-#Output path 2 
+#Output path 2
     outdir2 = os.path.join(BILout, themedir2, str(get_hydroyear(cdt)))
     if not os.path.exists(outdir2):
         if not os.path.exists(os.path.join(BILout, themedir2)):
@@ -313,34 +215,35 @@ def main():
 
 #---------------------------------------------------------
 #Output filename for wind_00 til wind _18
-    outfile3 = '%s_%s_%s_%s_%s' % ("wind_00","hourly_1500m", str(tstruct.tm_year).zfill(4),
+    outfile3 = '%s_%s_%s_%s_%s' % ("wind_00", "hourly_1500m", str(tstruct.tm_year).zfill(4),
                                str(tstruct.tm_mon).zfill(2),
                                str(tstruct.tm_mday).zfill(2))
 
-    outfile4 = '%s_%s_%s_%s_%s' % ("wind_06","hourly_1500m", str(tstruct.tm_year).zfill(4),
+    outfile4 = '%s_%s_%s_%s_%s' % ("wind_06", "hourly_1500m", str(tstruct.tm_year).zfill(4),
                                    str(tstruct.tm_mon).zfill(2),
                                    str(tstruct.tm_mday).zfill(2))
-    
-    outfile5 = '%s_%s_%s_%s_%s' % ("wind_12","hourly_1500m", str(tstruct.tm_year).zfill(4),
+
+    outfile5 = '%s_%s_%s_%s_%s' % ("wind_12", "hourly_1500m", str(tstruct.tm_year).zfill(4),
                                    str(tstruct.tm_mon).zfill(2),
                                    str(tstruct.tm_mday).zfill(2))
-    
-    outfile6 = '%s_%s_%s_%s_%s' % ("wind_18","hourly_1500m", str(tstruct.tm_year).zfill(4),
+
+    outfile6 = '%s_%s_%s_%s_%s' % ("wind_18", "hourly_1500m", str(tstruct.tm_year).zfill(4),
                                    str(tstruct.tm_mon).zfill(2),
                                    str(tstruct.tm_mday).zfill(2))
 
 #---------------------------------------------------------
 #Clip wind data to SEnorge grid 
-#---------------------------------------------------------    
-    # Calculate the wind speed vector - using model() 
-    total_wind_avg, max_wind, total_wind, wind_dir_cat, hour_wind,dom_wind_tab = model(x_wind, y_wind) 
-    
+#---------------------------------------------------------
+    # Calculate the wind speed vector - using model()
+    total_wind_avg, max_wind, total_wind, wind_dir_cat, \
+    hour_wind, dom_wind_tab = model(x_wind, y_wind)
+
     # interpolate total average wind speed to seNorge grid
     total_wind_avg_intp = interpolate_new(total_wind_avg)
     max_wind_intp = interpolate_new(max_wind)
     wind_dir_intp = interpolate_new(wind_dir_cat)
     dom_wind_tab_intp = interpolate_new(dom_wind_tab)
-    
+
     # Replace NaN values with the appropriate FillValue
     total_wind_avg_intp = nan2fill(total_wind_avg_intp)
     max_wind_intp = nan2fill(max_wind_intp)
@@ -352,132 +255,132 @@ def main():
 #--------------------------------------------------------
     if timenc == "00":
         #at 00:00
-        wind_00 = interpolate_new(total_wind[0,:,:])
-        hour_wind_intp_00 = interpolate_new(hour_wind[0,:,:])
+        wind_00 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[0, :, :])
         #at 06:00
-        wind_06 = interpolate_new(total_wind[6,:,:])
-        hour_wind_intp_06 = interpolate_new(hour_wind[6,:,:])
+        wind_06 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[6, :, :])
     #at 12:00
-        wind_12 = interpolate_new(total_wind[12,:,:])
-        hour_wind_intp_12 = interpolate_new(hour_wind[12,:,:])
+        wind_12 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[12, :, :])
     #at 18:00
-        wind_18 = interpolate_new(total_wind[18,:,:])
-        hour_wind_intp_18 = interpolate_new(hour_wind[18,:,:])
+        wind_18 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[18, :, :])
  
     elif timenc == "06":
     #at 06:00
-        wind_06 = interpolate_new(total_wind[0,:,:])
-        hour_wind_intp_06 = interpolate_new(hour_wind[0,:,:])
+        wind_06 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[0, :, :])
         #at 12:00
-        wind_12 = interpolate_new(total_wind[6,:,:])
-        hour_wind_intp_12 = interpolate_new(hour_wind[6,:,:])
+        wind_12 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[6, :, :])
         #at 18:00
-        wind_18 = interpolate_new(total_wind[12,:,:])
-        hour_wind_intp_18 = interpolate_new(hour_wind[12,:,:])
+        wind_18 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[12, :, :])
         #at 00:00
-        wind_00 = interpolate_new(total_wind[18,:,:])
-        hour_wind_intp_00 = interpolate_new(hour_wind[18,:,:])
-     
+        wind_00 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[18, :, :])
+
     elif timenc == "12":
         #at 12:00
-        wind_12 = interpolate_new(total_wind[0,:,:])
-        hour_wind_intp_12 = interpolate_new(hour_wind[0,:,:])
+        wind_12 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[0, :, :])
         #at 18:00
-        wind_18 = interpolate_new(total_wind[6,:,:])
-        hour_wind_intp_18 = interpolate_new(hour_wind[6,:,:])
+        wind_18 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[6, :, :])
         #at 00:00
-        wind_00 = interpolate_new(total_wind[12,:,:])
-        hour_wind_intp_00 = interpolate_new(hour_wind[12,:,:])
+        wind_00 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[12, :, :])
         #at 06:00
-        wind_06 = interpolate_new(total_wind[18,:,:])
-        hour_wind_intp_06 = interpolate_new(hour_wind[18,:,:])
-     
+        wind_06 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[18, :, :])
+
     elif timenc == "18":
         #at 18:00
-        wind_18 = interpolate_new(total_wind[0,:,:])
-        hour_wind_intp_18 = interpolate_new(hour_wind[0,:,:])
+        wind_18 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[0, :, :])
         #at 00:00
-        wind_00 = interpolate_new(total_wind[6,:,:])
-        hour_wind_intp_00 = interpolate_new(hour_wind[6,:,:])
+        wind_00 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[6, :, :])
         #at 06:00
-        wind_06 = interpolate_new(total_wind[12,:,:])
-        hour_wind_intp_06 = interpolate_new(hour_wind[12,:,:])
+        wind_06 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[12, :, :])
         #at 12:00
-        wind_12 = interpolate_new(total_wind[18,:,:])
-        hour_wind_intp_12 = interpolate_new(hour_wind[18,:,:])
-     
+        wind_12 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[18, :, :])
+
 #---------------------------------------------------------
 #Option --bil => Multiplied by 10 to store data as integer
-#---------------------------------------------------------    
+#---------------------------------------------------------
     if options.bil:
         from pysenorge.grid import senorge_mask
-        
+
         mask = senorge_mask()
- 
-#---------------------------------------------------------     
+
+#---------------------------------------------------------
         #avg wind
-        bil_avg_wind = flipud(uint16(total_wind_avg_intp*10.0))
+        bil_avg_wind = flipud(uint16(total_wind_avg_intp * 10.0))
         bil_avg_wind[mask] = UintFillValue
-         
+
         bilfile = BILdata(os.path.join(outdir1,
-                          outfile1+'.bil'),
+                          outfile1 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_avg_wind.flatten()) # collapsed into one dimension
         print biltext
-#---------------------------------------------------------    
+#---------------------------------------------------------
         #  max wind
-        bil_max_wind = flipud(uint16(max_wind_intp*10.0))
+        bil_max_wind = flipud(uint16(max_wind_intp * 10.0))
         bil_max_wind[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir2,
-                          outfile2+'.bil'),
+                          outfile2 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_max_wind.flatten())
         print biltext
-#---------------------------------------------------------    
+#---------------------------------------------------------
         # bil wind at 00
-        bil_wind_00 = flipud(uint16(wind_00*10.0))
+        bil_wind_00 = flipud(uint16(wind_00 * 10.0))
         bil_wind_00[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile3+'.bil'),
+                          outfile3 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_00.flatten())
         print biltext
-#---------------------------------------------------------    
+#---------------------------------------------------------
         # bil wind at 06
-        bil_wind_06 = flipud(uint16(wind_06*10.0))
+        bil_wind_06 = flipud(uint16(wind_06 * 10.0))
         bil_wind_06[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile4+'.bil'),
+                          outfile4 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_06.flatten())
         print biltext
-#---------------------------------------------------------    
+#---------------------------------------------------------
         #bil wind at 12
-        bil_wind_12 = flipud(uint16(wind_12*10.0))
+        bil_wind_12 = flipud(uint16(wind_12 * 10.0))
         bil_wind_12[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile5+'.bil'),
+                          outfile5 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_12.flatten())
         print biltext
-#---------------------------------------------------------    
+#---------------------------------------------------------
         #bil wind at 18
-        bil_wind_18 = flipud(uint16(wind_18*10.0))
+        bil_wind_18 = flipud(uint16(wind_18 * 10.0))
         bil_wind_18[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile6+'.bil'),
+                          outfile6 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_18.flatten())
         print biltext
 
 #---------------------------------------------------------
 #Option --nc write a nc file
-#---------------------------------------------------------    
+#---------------------------------------------------------
     if options.nc:
-        ncfile = NCdata(os.path.join(outdir1, outfile1+'.nc'))
-  
+        ncfile = NCdata(os.path.join(outdir1, outfile1 + '.nc'))
+
         ncfile.new(wind_time[-1])
-          
+
         ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str, "m s-1",
                              'Average wind speed last 24h', total_wind_avg_intp)
         ncfile.add_variable('max_wind_speed', max_wind.dtype.str, "m s-1",
@@ -489,76 +392,77 @@ def main():
 
 #---------------------------------------------------------
 #Option --png Write a PNG file
-#---------------------------------------------------------    
+#---------------------------------------------------------
     if options.png:
 
         #null inside index removed
-        writePNG(total_wind_avg_intp[:,:],
+        writePNG(total_wind_avg_intp[:, :],
                 os.path.join(outdir1, outfile1),
                  cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
                  )
-       
+
         #null inside index removed
-        writePNG(max_wind_intp[:,:],
+        writePNG(max_wind_intp[:, :],
                  os.path.join(outdir2, outfile2),
                  cltfile=r"/home/ralf/Dokumente/summerjob/data/max_wind_speed_10_no.clt"
                  )
-        
+
         #6hour Norgemaps windspeed
         writePNG(wind_00,
                  os.path.join(outdir_hour, outfile3),
                  cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
-                 )  
+                 )
 
         writePNG(wind_06,
                   os.path.join(outdir_hour, outfile4),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
-                  )  
-        
+                  )
+
         writePNG(wind_12,
                   os.path.join(outdir_hour, outfile5),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
-                  )  
-        
+                  )
+
         writePNG(wind_18,
                   os.path.join(outdir_hour, outfile6),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
-                  )  
+                  )
 
         #Wind direction
-        writePNG(wind_dir_intp[:,:],
+        writePNG(wind_dir_intp[:, :],
                   os.path.join(outdir1, 'wind_direction'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
-    
-        writePNG(dom_wind_tab_intp[:,:],
+
+        writePNG(dom_wind_tab_intp[:, :],
                   os.path.join(outdir1, 'wind_direction_dom_wind_tab'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/max_wind_speed_10_no.clt"
                   )
-      
+
         #Six hour Norgemaps wind direction
-        writePNG(hour_wind_intp_00[:,:],
+        writePNG(hour_wind_intp_00[:, :],
                   os.path.join(outdir1, 'wind_direction_hour_00'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
-        
-        writePNG(hour_wind_intp_06[:,:],
+
+        writePNG(hour_wind_intp_06[:, :],
                   os.path.join(outdir1, 'wind_direction_hour_06'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
-        
-        writePNG(hour_wind_intp_12[:,:],
+
+        writePNG(hour_wind_intp_12[:, :],
                   os.path.join(outdir1, 'wind_direction_hour_12'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
-        
-        writePNG(hour_wind_intp_18[:,:],
+
+        writePNG(hour_wind_intp_18[:, :],
                   os.path.join(outdir1, 'wind_direction_hour_18'),
                   cltfile=r"/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
                   )
 
-    # At last - cross fingers* it all worked out! *and toes !!! 
+    # At last - cross fingers* it all worked out! *and toes !!!
     print "\n*** Finished successfully ***\n"
+
 
 def __clt_avg_wind_speed_no():
     from pysenorge.io.png import CLT, HDR, CLTitem
@@ -582,8 +486,8 @@ def __clt_avg_wind_speed_no():
     cltfile = CLT()
     cltfile.new(hdr, cltlist)
     cltfile.write(r"Z:\tmp\wind_10m_daily\avg_wind_speed_10_no.clt")
-    
-    
+
+
 def __clt_max_wind_speed_no():
     from pysenorge.io.png import CLT, HDR, CLTitem
     hdr = HDR(255, 8,
@@ -687,6 +591,6 @@ def __clt_wind_direction_en():
     cltfile = CLT()
     cltfile.new(hdr, cltlist)
     cltfile.write(r"Z:\tmp\wind_10m_daily\wind_direction_10_en.clt")
-    
+
 if __name__ == '__main__':
     main()
