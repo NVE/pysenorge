@@ -22,6 +22,8 @@ Daily production usage:
 
 *Todo:*
 - Make a test that checks that the 3-D matrix is multiplied correctly.
+-Pull from upstream
+
 
 :Author: kmu
 :Created: 28. jan. 2011
