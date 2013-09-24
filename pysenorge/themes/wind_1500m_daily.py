@@ -494,19 +494,6 @@ def __clt_max_wind_speed_no():
               'Maksimal vindhastighet',
               'Maksimal vindhastighet i 10 m h�yde',
               'Vindstyrke')
-    # yr.no skala
-#    cltlist = [CLTitem(36.7, 300.0, (255,74,74), 'Orkan (over 32,6 m/s)'),
-#               CLTitem(28.5, 32.6, (126, 0, 255), 'Sterk storm (28,5-32,6 m/s)'),
-#               CLTitem(24.5, 28.4, (255,194,74), 'Full storm (24,5-28,4 m/s)'),
-#               CLTitem(20.8, 24.4, (255,255,74), 'Liten storm (20,8-24,4 m/s)'),
-#               CLTitem(17.2, 20.7, (194,224,74), 'Sterk kuling (17,2-20,7 m/s)'),
-#               CLTitem(13.9, 17.1, (134,194,74), 'Stiv kuling (13,9-17,1 m/s)'),
-#               CLTitem(10.8, 13.7, (74,164,74), 'Liten kuling (10,8-13,7 m/s)'),
-#               CLTitem(8.0, 10.7, (74,194,134), 'Frisk bris (8-10,7 m/s)'),
-#               CLTitem(5.5, 7.9, (74,224,194), 'Laber bris (5,5-7,9 m/s)'),
-#               CLTitem(3.4, 5.4, (74,255,255), 'Lett bris (3,4-5,4 m/s)'),
-#               CLTitem(1.6, 3.3, (74,194,224), 'Svak vind (1,6-3,3 m/s)'),
-#               CLTitem(300.1, FloatFillValue, (255, 255, 255), 'Ingen data')]
     
     cltlist = [CLTitem(36.7, 300.0, (80,0,153), 'Orkan (over 32,6 m/s)'),
                CLTitem(28.5, 32.6, (80,13,243), 'Sterk storm (28,5-32,6 m/s)'),
