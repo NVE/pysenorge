@@ -162,9 +162,12 @@ def main():
 
 #Get timenc
     ob_time = time.strftime("%H",time.gmtime(wind_time[0]))            
-
-    timenc = _time_fun(ob_time)
-    
+    data_timenc = _time_fun(ob_time)
+    if timearg == data_timenc:
+        pass
+    else:
+        print "The given input parameter and time value of the netCDF are not the same"
+    timenc = data_timenc
 #---------------------------------------------------------
 #Output paths and output filenames
 #---------------------------------------------------------
