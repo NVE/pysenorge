@@ -79,7 +79,7 @@ def model(x_wind, y_wind):
 
 #---------------------------------------------------------
 #Calculate maximal wind speed in dominant wind direction
-
+    '''
     dom_wind_tab = zeros_like(wind_dir_cat)
 
     for i in xrange(dims[1]):
@@ -102,7 +102,7 @@ def model(x_wind, y_wind):
                                     total_wind, i, j, dom_wind_tab, dims)  # W
             dom_wind_tab = dom_wind(wind_dir_cat, 8, -22.5, -67.5, wind_dir,
                                     total_wind, i, j, dom_wind_tab, dims)  # NW
-
+    '''
     print "-------------------------\n Done Part 2 \n-------------------------"
 
 #---------------------------------------------------------
@@ -127,4 +127,4 @@ def model(x_wind, y_wind):
 #---------------------------------------------------------
 #Return values
     return total_wind_avg, max_wind, total_wind, wind_dir_cat, \
-           hour_wind_dir, dom_wind_tab
+           hour_wind_dir#, dom_wind_tab
