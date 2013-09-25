@@ -447,11 +447,6 @@ def main():
                 cltfile=direction_clt_file_path
                 )
 
-        #Maximal dominate wind speed
-        #writePNG(dom_wind_tab_intp[:, :],
-        #          os.path.join(outdir1, today, 'wind_direction_dom_wind_tab'),
-        #          cltfile=direction_clt_file_path
-        #          )
     # At last - cross fingers* it all worked out! *and toes !!!
     print "\n***Finished successfully***\n"
 
