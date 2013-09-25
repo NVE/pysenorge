@@ -75,56 +75,6 @@ def model(x_wind, y_wind):
                         E += 1
 
             wind_dir_cat[i][j] = LambertsFormula(N, NE, E, SE, S, SW, W, NW)
-    print "-------------------------\n Done Part 1 \n-------------------------"
 
-#---------------------------------------------------------
-#Calculate maximal wind speed in dominant wind direction
-    '''
-    dom_wind_tab = zeros_like(wind_dir_cat)
+    return total_wind_avg, max_wind, total_wind, wind_dir_cat
 
-    for i in xrange(dims[1]):
-        for j in xrange(dims[2]):
-            dom_wind_tab = dom_wind(wind_dir_cat, 1, -67.5, -112.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # N
-            dom_wind_tab = dom_wind(wind_dir_cat, 2, -112.5, -157.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # NE
-            dom_wind_tab = dom_wind(wind_dir_cat, 3, 157.5, 180, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # E
-            dom_wind_tab = dom_wind(wind_dir_cat, 3, -157.5, -180, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # E
-            dom_wind_tab = dom_wind(wind_dir_cat, 4, 112.5, 157.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # SE
-            dom_wind_tab = dom_wind(wind_dir_cat, 5, 67.5, 112.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)   # S
-            dom_wind_tab = dom_wind(wind_dir_cat, 6, 22.5, 67.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # SW
-            dom_wind_tab = dom_wind(wind_dir_cat, 7, 0, 22.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # W
-            dom_wind_tab = dom_wind(wind_dir_cat, 8, -22.5, -67.5, wind_dir,
-                                    total_wind, i, j, dom_wind_tab, dims)  # NW
-    '''
-    print "-------------------------\n Done Part 2 \n-------------------------"
-
-#---------------------------------------------------------
-#Daily wind directions with 45 degrees
-    #W
-    hour_wind_dir = where((new_wind_dir >= -22.5) & (new_wind_dir < 22.5), 6, new_wind_dir)
-    #SW
-    hour_wind_dir = where((hour_wind_dir >= 22.5) & (hour_wind_dir < 67.5), 5, hour_wind_dir)
-    #S
-    hour_wind_dir = where((hour_wind_dir >= 67.5) & (hour_wind_dir < 112.5), 4, hour_wind_dir)
-    #SE
-    hour_wind_dir = where((hour_wind_dir >= 112.5) & (hour_wind_dir < 157.5), 3, hour_wind_dir)
-    #NW
-    hour_wind_dir = where((hour_wind_dir > -22.5) & (hour_wind_dir <= -67.5), 7, hour_wind_dir)
-    #N
-    hour_wind_dir = where((hour_wind_dir > -67.5) & (hour_wind_dir <= -112.5), 0, hour_wind_dir)
-    #NE
-    hour_wind_dir = where((hour_wind_dir > -112.5) & (hour_wind_dir <= -157.5), 1, hour_wind_dir)
-    #E
-    hour_wind_dir = where((hour_wind_dir < -157.5) | (hour_wind_dir >= 157.5) , 2, hour_wind_dir)
-
-#---------------------------------------------------------
-#Return values
-    return total_wind_avg, max_wind, total_wind, wind_dir_cat, \
-           hour_wind_dir#, dom_wind_tab

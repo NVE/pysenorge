@@ -9,7 +9,7 @@ are not created.
 A netcdf file with 24h of wind forecasts from the AROME-model serves as data source.
 All calculations are made for a 1km raster over whole Norway for each cell. If no 
 options are chosen the script produces .bil files as output. But its possible to
-create netCDF or PNG files. The result is plotted in the seNorge grid. The argument 
+create netCDF file. The result is plotted in the seNorge grid. The argument 
 timenc was added because the recent model delivers every 6 hours an output file. 
 Therefore a second argument was needed to load the right file to the right time.
 
@@ -60,11 +60,10 @@ from numpy import flipud, uint16
 #---------------------------------------------------------
 # Own modules
 #---------------------------------------------------------
-from pysenorge.set_environment import netCDFin, BILout, FloatFillValue, \
+from pysenorge.set_environment import netCDFin, BILout, \
                                       UintFillValue
 from pysenorge.io.bil import BILdata
 from pysenorge.io.nc import NCdata
-from pysenorge.io.png import writePNG
 from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.converters import nan2fill
 from pysenorge.grid import interpolate_new
@@ -76,7 +75,8 @@ from pysenorge.tools.get_timenc import _time_fun
 #Main program
 def main():
     """
-    Loads and verifies input data, calls the model, and controls the output stream.
+    Loads and verifies input data, calls the model,\
+    and controls the output stream.
     """
 
     # Theme variables
@@ -101,10 +101,6 @@ def main():
     parser.add_option("--nc",
                   action="store_true", dest="nc", default=False,
                   help="Set to store output in netCDF format")
-    #create png
-    parser.add_option("--png",
-                  action="store_true", dest="png", default=False,
-                  help="Set to store output as PNG image")
 
 #   Comment to suppress help
 #   parser.print_help()
@@ -126,7 +122,7 @@ def main():
     load_date = "%s_%s_%s" % (yr, mon, day)
 
     ncfilename = "AROME_WIND_850_NVE_%s_%s.nc" % (timearg, load_date)
-    ncfile = os.path.join(netCDFin, "2013", ncfilename)
+    ncfile = os.path.join(netCDFin, yr, ncfilename)
 
     #Test if path of the netCDF file exists
     if not os.path.exists(ncfile):
@@ -147,7 +143,8 @@ def main():
     if timearg == data_timenc:
         pass
     else:
-        print "The given input parameter and time value of the netCDF are not the same"
+        print "The given input parameter and time value \
+                of the netCDF are not the same"
     timenc = data_timenc
 
 #---------------------------------------------------------
@@ -168,40 +165,44 @@ def main():
     if not os.path.exists(outdir1):
         if not os.path.exists(os.path.join(BILout, themedir1)):
             os.chdir(BILout)
-            os.system('mkdir %s' % themedir1)
+            os.makedirs('%s' % themedir1)
         os.chdir(os.path.join(BILout, themedir1))
-        os.system('mkdir %s' % str(get_hydroyear(cdt)))
+        os.makedirs('%s' % str(get_hydroyear(cdt)))
 
     #Output path 2
     outdir2 = os.path.join(BILout, themedir2, str(get_hydroyear(cdt)))
     if not os.path.exists(outdir2):
         if not os.path.exists(os.path.join(BILout, themedir2)):
             os.chdir(BILout)
-            os.system('mkdir %s' % themedir2)
+            os.makedirs('%s' % themedir2)
         os.chdir(os.path.join(BILout, themedir2))
-        os.system('mkdir %s' % str(get_hydroyear(cdt)))
+        os.makedirs('%s' % str(get_hydroyear(cdt)))
 
     #Output path for wind_00 til wind _18
     if timenc == "00":
-        outdir_hour = os.path.join(BILout, str(get_hydroyear(cdt)), load_date, "00")
+        outdir_hour = os.path.join(BILout, "wind_speed_06_1500m",
+                                   str(get_hydroyear(cdt)))
     elif timenc == "06":
-        outdir_hour = os.path.join(BILout, str(get_hydroyear(cdt)), load_date, "06")
+        outdir_hour = os.path.join(BILout, "wind_speed_06_1500m",
+                                   str(get_hydroyear(cdt)))
     elif timenc == "12":
-        outdir_hour = os.path.join(BILout, str(get_hydroyear(cdt)), load_date, "12")
+        outdir_hour = os.path.join(BILout, "wind_speed_06_1500m",
+                                   str(get_hydroyear(cdt)))
     elif timenc == "18":
-        outdir_hour = os.path.join(BILout, str(get_hydroyear(cdt)), load_date, "18")
+        outdir_hour = os.path.join(BILout, "wind_speed_06_1500m",
+                                   str(get_hydroyear(cdt)))
 
     if not os.path.exists(outdir_hour):
         if not os.path.exists(os.path.join(BILout, str(get_hydroyear(cdt)))):
             os.chdir(BILout)
-            os.system('mkdir %s' % str(get_hydroyear(cdt)))
+            os.makedirs('%s' % str(get_hydroyear(cdt)))
         os.chdir(os.path.join(BILout, str(get_hydroyear(cdt))))
         os.makedirs('%s/%s/' % (load_date, timenc))
 
 #---------------------------------------------------------
     # Calculate the wind speed vector - using model()
     total_wind_avg, max_wind, total_wind, wind_dir_cat, \
-    hour_wind = model(x_wind, y_wind)
+    = model(x_wind, y_wind)
 
     # interpolate total average wind speed to seNorge grid
     total_wind_avg_intp = interpolate_new(total_wind_avg)
@@ -219,17 +220,13 @@ def main():
     #Hourly wind forecast based on the recent AROME input file
     if timenc == "18":
     #at 01:00
-        wind_00 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_00 = interpolate_new(hour_wind[0, :, :])
+        wind_18 = interpolate_new(total_wind[0, :, :])
     #at 07:00
-        wind_06 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_06 = interpolate_new(hour_wind[6, :, :])
+        wind_00 = interpolate_new(total_wind[6, :, :])
     #at 13:00
-        wind_12 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[12, :, :])
+        wind_06 = interpolate_new(total_wind[12, :, :])
     #at 19:00
-        wind_18 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[18, :, :])
+        wind_12 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_18_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_00_1500m", today)
@@ -238,17 +235,13 @@ def main():
 
     elif timenc == "00":
     #at 07:00
-        wind_06 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_06 = interpolate_new(hour_wind[0, :, :])
+        wind_00 = interpolate_new(total_wind[0, :, :])
     #at 13:00
-        wind_12 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[6, :, :])
+        wind_06 = interpolate_new(total_wind[6, :, :])
     #at 19:00
-        wind_18 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[12, :, :])
+        wind_12 = interpolate_new(total_wind[12, :, :])
     #next day at 01:00
-        wind_00 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_00 = interpolate_new(hour_wind[18, :, :])
+        wind_18 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_00_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_06_1500m", today)
@@ -257,17 +250,13 @@ def main():
 
     elif timenc == "06":
         #at 13:00
-        wind_12 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[0, :, :])
+        wind_06 = interpolate_new(total_wind[0, :, :])
         #at 19:00
-        wind_18 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[6, :, :])
+        wind_12 = interpolate_new(total_wind[6, :, :])
         #next day 01:00
-        wind_00 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_00 = interpolate_new(hour_wind[12, :, :])
+        wind_18 = interpolate_new(total_wind[12, :, :])
         #next day 07:00
-        wind_06 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_06 = interpolate_new(hour_wind[18, :, :])
+        wind_00 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_06_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_12_1500m", today)
@@ -276,17 +265,13 @@ def main():
 
     elif timenc == "12":
         #at 19:00
-        wind_18 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[0, :, :])
+        wind_12 = interpolate_new(total_wind[0, :, :])
         #next day 01:00
-        wind_00 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[6, :, :])
+        wind_18 = interpolate_new(total_wind[6, :, :])
         #next day 07:00
-        wind_06 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[12, :, :])
+        wind_00 = interpolate_new(total_wind[12, :, :])
         #next day 13:00
-        wind_12 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[18, :, :])
+        wind_06 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_12_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_18_1500m", tomorrow)
@@ -362,90 +347,26 @@ def main():
 
         ncfile.new(wind_time[-1])
 
-        ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str, "m s-1",
-                             'Average wind speed last 24h', total_wind_avg_intp)
+        ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str,
+                            "m s-1", 'Average wind speed last 24h',
+                            total_wind_avg_intp)
         ncfile.add_variable('max_wind_speed', max_wind.dtype.str, "m s-1",
-                             'Maximum wind gust last 24h', max_wind_intp)
+                            'Maximum wind gust last 24h',
+                            max_wind_intp)
         ncfile.add_variable('wind_direction', wind_dir_cat.dtype.str,
-                             "cardinal direction",
-                             'Prevailing wind direction last 24h', wind_dir_intp)
+                            "cardinal direction",
+                            'Prevailing wind direction last 24h',
+                            wind_dir_intp)
         ncfile.add_variable('wind_00', wind_00.dtype.str, "m s-1",
-                             'Wind forecast 01:00', hour_wind_intp_00)
+                            'Wind forecast 01:00', wind_00)
         ncfile.add_variable('wind_06', wind_06.dtype.str, "m s-1",
-                             'Wind forecast 07:00', hour_wind_intp_06)
+                            'Wind forecast 07:00', wind_06)
         ncfile.add_variable('wind_12', wind_12.dtype.str, "m s-1",
-                             'Wind forecast 13:00', hour_wind_intp_12)
+                            'Wind forecast 13:00', wind_12)
         ncfile.add_variable('wind_18', wind_18.dtype.str, "m s-1",
-                             'Wind forecast 19:00', hour_wind_intp_18)
+                            'Wind forecast 19:00', wind_18)
 
         ncfile.close()
-
-#---------------------------------------------------------
-    #Option --png: Write a PNG files
-    if options.png:
-        avg_clt_file_path = "/home/ralf/Dokumente/summerjob/data/avg_wind_speed_10_no.clt"
-        max_clt_file_path = "/home/ralf/Dokumente/summerjob/data/max_wind_speed_10_no.clt"
-        direction_clt_file_path = "/home/ralf/Dokumente/summerjob/data/wind_direction_10_no.clt"
-
-        #Creates png file wind average
-        writePNG(total_wind_avg_intp[:, :],
-                os.path.join(outdir1, outfile1),
-                 cltfile=avg_clt_file_path
-                 )
-
-        #Creates png file wind max
-        writePNG(max_wind_intp[:, :],
-                 os.path.join(outdir2, outfile2),
-                 cltfile=max_clt_file_path
-                 )
-
-        #Hourly wind speed maps
-        writePNG(wind_00,
-                os.path.join(outdir_hour, outfile3),
-                cltfile=avg_clt_file_path
-                )
-
-        writePNG(wind_06,
-                os.path.join(outdir_hour, outfile4),
-                cltfile=avg_clt_file_path
-                )
-
-        writePNG(wind_12,
-                os.path.join(outdir_hour, outfile5),
-                cltfile=avg_clt_file_path
-                )
-
-        writePNG(wind_18,
-                os.path.join(outdir_hour, outfile6),
-                cltfile=avg_clt_file_path
-                )
-
-        #Wind direction
-        writePNG(wind_dir_intp[:, :],
-                  os.path.join(outdir1, 'wind_direction'),
-                  cltfile=direction_clt_file_path
-                  )
-
-        #Hourly wind directions
-        writePNG(hour_wind_intp_00[:, :],
-                os.path.join(outdir1, 'wind_direction_hour_00'),
-                cltfile=direction_clt_file_path
-                )
-
-        writePNG(hour_wind_intp_06[:, :],
-                os.path.join(outdir1, 'wind_direction_hour_06'),
-                cltfile=direction_clt_file_path
-                )
-
-        writePNG(hour_wind_intp_12[:, :],
-                os.path.join(outdir1, 'wind_direction_hour_12'),
-                cltfile=direction_clt_file_path
-                )
-
-        writePNG(hour_wind_intp_18[:, :],
-                os.path.join(outdir1, 'wind_direction_hour_18'),
-                cltfile=direction_clt_file_path
-                )
 
     # At last - cross fingers* it all worked out! *and toes !!!
     print "\n***Finished successfully***\n"

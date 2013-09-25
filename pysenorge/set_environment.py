@@ -20,24 +20,26 @@ Contains the paths to the standard input/output folders and values used in L{pys
 @since: 16. aug. 2010
 '''
 
-import sys, os
+#Build in modules
+import sys
+import os
 
-if sys.platform == 'linux2': 
-    
-    METdir = r'//hdata/grid/metdata/metno_obs_v1.1/'
-    
-    PROGdir = r'/home/ralf/Dokumente/summerjob/xgeo/pysenorge/'
-    
-    BILout = r'/home/ralf/Dokumente/summerjob/data/'
-    
-    netCDFin = r'/home/ralf/Dokumente/summerjob/data/'
-    
-    netCDFout = r'/home/ralf/Dokumente/summerjob/data/netCDF/'
-    
-    PNGdir = r'/home/ralf/Dokumente/summerjob/data/'
-    
-    LOGdir = r'/home/ralf/Dokumente/summerjob/data/log/'
-    
+if sys.platform == 'linux2':
+
+    METdir = '//hdata/grid/metdata/metno_obs_v1.1/'
+
+    PROGdir = '/home/ralf/Dokumente/summerjob/xgeo/pysenorge/'
+
+    BILout = '/hdata/grid/snowsim/'
+
+    netCDFin = '/hdata/grid/metdata/prognosis/harmonie/wind/netcdf/'
+
+    netCDFout = '/hdata/grid/snowsim/'
+
+    PNGdir = '/home/ralf/Dokumente/summerjob/data/'
+
+    LOGdir = '/home/ralf/Dokumente/summerjob/data/log/'
+
 elif sys.platform == 'win32':
     
     METdir = r'Z:\metdata\metno_obs_v1.1'
