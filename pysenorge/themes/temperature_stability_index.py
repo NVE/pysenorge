@@ -86,11 +86,12 @@ def main():
 
     # Comment to suppress help
     #    parser.print_help()
-    args = parser.parse_args()
+    (options, args) = parser.parse_args()
 
     # Verify input parameters
-    if len(args) != 0:
-        parser.error("Please provide two input files!")
+
+    if len(args) != 1:
+        parser.error("Please provide a date YYYY-MM-DD")
     else:
         ob_date = args[0].split("-")
         dd = ob_date[2]
