@@ -133,7 +133,7 @@ def main():
     ssttm[mask] = UintFillValue
 
     # Set output
-    outfile = themedir + '_' + load_date
+    outfile = themedir + '_' + load_date + ".bil"
     outdir = os.path.join(BILout, themedir, str(get_hydroyear(cdt)),
                           outfile)
     if not os.path.exists(os.path.join(BILout, themedir,
