@@ -89,7 +89,7 @@ def main():
     args = parser.parse_args()
 
     # Verify input parameters
-    if len(args) != 1:
+    if len(args) != 0:
         parser.error("Please provide two input files!")
     else:
         ob_date = args[0].split("-")
