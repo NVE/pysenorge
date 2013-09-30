@@ -26,9 +26,9 @@ import os
 
 if sys.platform == 'linux2':
 
-    METdir = '//hdata/grid/metdata/metno_obs_v1.1/'
+    METdir = '/hdata/grid/metdata/metno_obs_v1.1/'
 
-    PROGdir = '/home/ralf/Dokumente/summerjob/xgeo/pysenorge/'
+    PROGdir = '/hdata/drift/snowmap/pysenorge/'
 
     BILout = '/hdata/grid/snowsim/'
 
@@ -36,30 +36,30 @@ if sys.platform == 'linux2':
 
     netCDFout = '/hdata/grid/snowsim/'
 
-    PNGdir = '/home/ralf/Dokumente/summerjob/data/'
+    PNGdir = '/hdata/grid/snowsim/'
 
-    LOGdir = '/home/ralf/Dokumente/summerjob/data/log/'
+    LOGdir = '/hdata/grid/snowsim/'
 
 elif sys.platform == 'win32':
-    
+
     METdir = r'Z:\metdata\metno_obs_v1.1'
-    
+
     PROGdir = r'Z:\metdata\prognosis'
-    
+
     BILin = r'Z:\snowsim' # sorted by hydrological year
 #    BILout = r'\\hdata\grid\snowsim'#
     BILout = r'Z:\snowsim'
-    
+
     netCDFin = r'Z:\metdata\prognosis\um4'
-    
+
     netCDFout = r'Z:\tmp'
-    
+
     PNGdir = r'Z:\mapimage\png'
-    
+
     LOGdir = r'Z:\log'
-    
+
 else:
-    
+
     print "The current operating system is not supported!"
 
 pysenorgedir = os.path.dirname(__file__)
@@ -74,4 +74,4 @@ default_senorge_width = 1195
 default_senorge_height = 1550
 
 default_UM4_width = 533
-default_UM4_height =  582
+default_UM4_height = 582

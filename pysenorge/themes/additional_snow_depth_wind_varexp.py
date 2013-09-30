@@ -22,130 +22,124 @@ from pysenorge.tools.date_converters import datetime2BILdate, iso2datetime,\
                                             get_hydroyear
 from pysenorge.io.bil import BILdata
 from pysenorge.grid import senorge_mask
-from pysenorge.functions import frozen_snow #added in latest version
+from pysenorge.functions import frozen_snow  # added in latest version
 
-#NEED TO DELETE LATER
-BILout = "/home/ralf/Dokumente/summerjob/data/add"
 
 #-----------------------------------------------------------------
 def model(u, nsd, lwc, age, frz):
-    '''    
-    Empirical formulation relating the additional snow depth |Hwind| deposited in lee
-    slopes per day to the third power of the daily average wind speed u
-    (u<=20 m |s-1|). The model is only valid for blowing snow. For each new snow event
-    the additional loading in lee slopes is calculated. Snow drift of already
+    '''
+    Empirical formulation relating the additional snow depth |Hwind| deposited 
+    in lee slopes per day to the third power of the daily average wind speed u
+    (u<=20 m |s-1|). The model is only valid for blowing snow. For each new snow 
+    event the additional loading in lee slopes is calculated. Snow drift of already
     deposited snow is not taken into account at the moment. Also frozen snow is not going to be 
     transported unless there new snow has fallen.
     
     The threshold wind speed (|Ut|) depends on the friction between the snow surface and
     air. Li & Pomeroy (1997) proposed an empirical relationship based on 2 m air
     temperature. They found minimum threshold wind speeds of 4 m |s-1| for dry snow 
-    and a 7 m |s-1| for wet snow over the Canadian praire.  
-    
+    and a 7 m |s-1| for wet snow over the Canadian praire.
+
     Only the hours of wind speeds above |Ut| should be considered. The hours the
     wind speed is larger than |Ut| and the time since the last snowfall need to be
     considered since they substantially influence the amount of snow that is 
     available for transport.
     Short periods of high wind speeds shortly after snow fall will transport more 
     snow than calm winds over old, well settled snow. 
-    
+
     **References:**
-        - Foehn, P. M. B. (1980). Snow transport over mountain crests. Journal of Glaciology, 26(94).
-        - Meister, R., Influence of strong winds on snow distribution and avalanche activity, Ann. Glac., 13, pp.195-201, 1989 
+        - Foehn, P. M. B. (1980). Snow transport over mountain crests. Journal 
+          of Glaciology, 26(94).
+        - Meister, R., Influence of strong winds on snow distribution and avalanche 
+          activity, Ann. Glac., 13, pp.195-201, 1989 
         - Schweizer, J. (2003). Snow avalanche formation. Reviews of Geophysics, 41(4)
-        
+
     **Done:**
         - Differentiate between blowing and drifting snow: Blowing snow only under snow fall.
         - Varying power coefficient (range: 2-4) (Gauer, 2001) 
-        - Snow drift peaks at 20 m |s-1| and decreases with even higher wind speeds due to saturation (Doorshot et al., 2001)
-    
+        - Snow drift peaks at 20 m |s-1| and decreases with even higher wind speeds
+          due to saturation (Doorshot et al., 2001)
+
     :Parameters:
         - u: average daily wind speed [m |s-1|] (UM4->seNorge)
         - nsd: new snow depth [mm] (seNorge)
         - lwc: liquid water content % (0-3% dry, 3-9% moist, >9% wet) (seNorge)
         - age: days since last snow fall (seNorge)
-        
+
     .. |Hwind| replace:: H\ :sub:`wind`
     .. |s-1| replace:: s\ :sup:`-1`
     .. |Ut| replace:: U\ :sub:`t`
     '''
-    age_new = age < 2 # fresh snow, same transport as under snow fall
-    age_old = age >= 2 # older snow, transport depends on LWC
-    
+    age_new = age < 2  # fresh snow, same transport as under snow fall
+    age_old = age >= 2  # older snow, transport depends on LWC
+
     lwc_dry = lwc < 3
     lwc3 = lwc >= 3
     lwc9 = lwc < 9
-    lwc_moist = lwc3*lwc9 # moist snow, reduced wind transport
+    lwc_moist = lwc3 * lwc9  # moist snow, reduced wind transport
 
-    Hwind = zeros_like(u) # init array
-    uc = clip(u, 0, 20) # set wind speeds >20 m s-1 to 20 m s-1 - disregards the fact the higher wind speeds actually lead to weaker snow transport due to increased sublimation.
-    k = 8e-5 # [s3 d-1 m-2]
-
-    mask = age_old * lwc_dry # reduced transport for dry, old snow
-    Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
+    Hwind = zeros_like(u)   # init array
+    uc = clip(u, 0, 20)     # set wind speeds >20 m s-1 to 20 m s-1 - 
+                            # disregards the fact the higher wind speeds actually 
+                            #lead to weaker snow transport due to increased sublimation.
+    k = 8e-5                # [s3 d-1 m-2]
+    mask = age_old * lwc_dry  # reduced transport for dry, old snow
+    Hwind[mask] = k * uc[mask]**2  # correction by Gauer (2001)
 
     #Added at the latest version of additonal-snow map
-    Hwind[frz] = 0 #Setting value to 0 where frozen snow occur 
+    Hwind[frz] = 0  # Setting value to 0 where frozen snow occur
 
     mask = age_new * lwc_dry
-    Hwind[mask] = k * uc[mask]**3 # additional snow depth after Foehn(1980)
+    Hwind[mask] = k * uc[mask] ** 3  # additional snow depth after Foehn(1980)
 
-    mask = age_new*lwc_moist # reduced transport for moist, new snow
-    Hwind[mask] = k * uc[mask]**2 # correction by Gauer (2001)
-    
-    # No transport when snow is wet, old, moist or frozen    
-    
+    mask = age_new * lwc_moist  # reduced transport for moist, new snow
+    Hwind[mask] = k * uc[mask] ** 2  # correction by Gauer (2001)
+
+    # No transport when snow is wet, old, moist or frozen
+
     return Hwind
+
 
 #-----------------------------------------------------------------
 def main():
     '''
-    Loads and verifies input data, calls the models, and controls the output stream. 
-    
+    Loads and verifies input data, calls the models, and controls the output stream.
     Command line usage::
-    
+
         python //~HOME/pysenorge/themes/additional_snow_depth_wind.py YYYY-MM-DD [options]
     '''
     # Theme variables
     themedir = 'additional_snow_depth'
     themename = ''
-    
+
     # Setup input parser
     usage = "usage: python //~HOME/pysenorge/themes/additional_snow_depth.py YYYY-MM-DD [options]"
-    
+
     parser = OptionParser(usage=usage)
-    parser.add_option("-o", "--outdir", 
-                      action="store", dest="outdir", type="string",
-                      metavar="DIR", default=os.path.join(BILout, themedir),
-                      help="Output directory - default: $BILout/%s/$HYDROYEAR" % \
-                      themedir)
+
     parser.add_option("--no-bil",
                   action="store_false", dest="bil", default=True,
                   help="Set to suppress output in BIL format")
     parser.add_option("--nc",
                   action="store_true", dest="nc", default=False,
                   help="Set to store output in netCDF format")
-    parser.add_option("--png",
-                  action="store_true", dest="png", default=False,
-                  help="Set to store output as PNG image")
-    
+
     # Comment to suppress help
     # parser.print_help()
     (options, args) = parser.parse_args()
-    
+
     if len(args) != 1:
         parser.error("Please provide the date in ISO format YYYY-MM-DD!")
-        parser.print_help() 
-    
+        parser.print_help()
+
     # Get current datetime
-    cdt = iso2datetime(args[0]+" 06:00:00")
-    windfilename = "wind_speed_avg_10m_%s.bil" % datetime2BILdate(cdt)
-    
-    #----------------------------------------------------------------------------
-    # Import wind-speed 10m map 
-    # windfile = os.path.join(BILout, "wind_speed_avg_10m", str(get_hydroyear(cdt)),windfilename)
-    windfile = os.path.join(BILout, windfilename)
-    
+    cdt = iso2datetime(args[0] + " 06:00:00")
+    windfilename = "wind_speed_avg_1500m_%s.bil" % datetime2BILdate(cdt)
+
+    # Import wind-speed 1500m map
+    windfile = os.path.join(BILout, "wind_speed_avg_1500m",
+                            str(get_hydroyear(cdt)), windfilename)
+
     if not os.path.exists(windfile):
         parser.error("BIL file %s containing wind data does not exist!" %\
                      windfile)
@@ -154,40 +148,37 @@ def main():
         wind = BILdata(windfile, 'uint16')
         wind.read()
         # convert to Celsius
-        wind.data = float32(wind.data)*0.1 #multiplyed by 0.1 because of in integer values in wind_model
-    
-    #----------------------------------------------------------------------------
-    #import snow-depth map 
+        wind.data = float32(wind.data) * 0.1  # multiplyed by 0.1 because of in integer values in wind_model
+
+    #--------------------------------------------------------------------------
+    #import snow-depth map
     sdfilename = "sdfsw_%s.bil" % datetime2BILdate(cdt)
-    #sdfile = os.path.join(BILout, "sdfsw", str(get_hydroyear(cdt)), sdfilename)
     sdfile = os.path.join(BILout, sdfilename)
-         
+
     if not os.path.exists(sdfile):
         parser.error("BIL file %s containing snow-depth data does not exist!" %\
                      sdfile)
     else:
         sd = BILdata(sdfile, 'uint16')
         sd.read()
-    
-    #----------------------------------------------------------------------------
-    #import snow-age map 
+
+    #--------------------------------------------------------------------------
+    #import snow-age map
     agefilename = "age_%s.bil" % datetime2BILdate(cdt)
-    #agefile = os.path.join(BILout, "age", str(get_hydroyear(cdt)), agefilename)
-    agefile = os.path.join(BILout, agefilename)
-    
+    agefile = os.path.join(BILout, "age", str(get_hydroyear(cdt)), agefilename)
+
     if not os.path.exists(agefile):
         parser.error("BIL file %s containing snow-age data does not exist!" %\
                      agefile)
     else:
         age = BILdata(agefile, 'uint8')
         age.read()
-    
-    #----------------------------------------------------------------------------
-    #import liquid-water-content map 
+
+    #--------------------------------------------------------------------------
+    #import liquid-water-content map
     lwcfilename = "lwc_%s.bil" % datetime2BILdate(cdt)
-    #lwcfile = os.path.join(BILout, "lwc", str(get_hydroyear(cdt)), lwcfilename)
-    lwcfile = os.path.join(BILout, lwcfilename)
-     
+    lwcfile = os.path.join(BILout, "lwc", str(get_hydroyear(cdt)), lwcfilename)
+
     if not os.path.exists(lwcfile):
         parser.error("BIL file %s containing snow-LWC data does not exist!" %\
                      lwcfile)
@@ -195,14 +186,14 @@ def main():
         lwc = BILdata(lwcfile, 'uint8')
         lwc.read()
 
-    #----------------------------------------------------------------------------
-    #Calculate and import frozen-snow map 
+    #--------------------------------------------------------------------------
+    #Calculate and import frozen-snow map
     try:
         frz = frozen_snow.frozen()
         frz.load_data(os.path.join(BILout, "ssttm_2013_01_13.bil"))
-        frz.check_value(frz.tsi)    
-    except (IOError,NameError):
-        print "Couldn't find or load frozen-snow map"
+        frz.check_value(frz.tsi)
+    except (IOError, NameError):
+        print "Couldn't import frozen-snow map"
 
     # Setup outputs
     outfile = themedir+'_'+datetime2BILdate(cdt)
