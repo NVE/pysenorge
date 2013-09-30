@@ -139,6 +139,7 @@ def main():
     
     # Get current datetime
     cdt = iso2datetime(args[0]+" 06:00:00")
+    #Ändern Fehler...
     windfilename = "wind_speed_avg_10m_%s.bil" % datetime2BILdate(cdt)
     
     #----------------------------------------------------------------------------
@@ -187,7 +188,7 @@ def main():
     lwcfilename = "lwc_%s.bil" % datetime2BILdate(cdt)
     #lwcfile = os.path.join(BILout, "lwc", str(get_hydroyear(cdt)), lwcfilename)
     lwcfile = os.path.join(BILout, lwcfilename)
-     
+
     if not os.path.exists(lwcfile):
         parser.error("BIL file %s containing snow-LWC data does not exist!" %\
                      lwcfile)
@@ -213,14 +214,14 @@ def main():
             os.system('mkdir %s' % themedir)
         os.chdir(options.outdir)
         os.system('mkdir %s' % str(get_hydroyear(cdt)))
-    
+
     #Run additional-snow map model
     Hwind = model(wind.data, sd.data, lwc.data, age.data, frz.idex)
-    
+
     # Set no-data values to UintFillValue
     mask = senorge_mask()
     Hwind[mask] = UintFillValue
-    
+
     #Option create bil-file
     if options.bil:
         # Write to BIL file
@@ -228,10 +229,10 @@ def main():
                           datatype='uint16')
         Hwind = uint16(Hwind*1000)
         Hwind[mask] = UintFillValue
-        
+
         biltext = bilfile.write(Hwind)
         print biltext
-    
+
     #Option create nc-file
     if options.nc:
         from pysenorge.io.nc import NCdata
@@ -244,7 +245,7 @@ def main():
         ncfile.add_variable(themedir, ncHwind.dtype.str, "m",
                             themename, ncHwind)
         ncfile.close()
-    
+
     #Option create png imagefile
     if options.png:
         from pysenorge.io.png import writePNG
@@ -252,9 +253,8 @@ def main():
         writePNG(flipud(Hwind), os.path.join(outdir, outfile),
                  cltfile=os.path.join("/home/ralf/Dokumente/summerjob/data/additional_snow_depth_wind.clt")
                  )
-        
+
     # At last - cross fingers it all worked out!
     print "\n*** Finished successfully ***\n"
-    
 if __name__ == '__main__':
     main()

@@ -219,17 +219,17 @@ def main():
     #Hourly wind forecast based on the recent AROME input file
     if timenc == "18":
     #at 01:00
-        wind_00 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_00 = interpolate_new(hour_wind[0, :, :])
+        wind_18 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[0, :, :])
     #at 07:00
-        wind_06 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_06 = interpolate_new(hour_wind[6, :, :])
+        wind_00 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[6, :, :])
     #at 13:00
-        wind_12 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[12, :, :])
+        wind_06 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[12, :, :])
     #at 19:00
-        wind_18 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[18, :, :])
+        wind_12 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_18_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_00_1500m", today)
@@ -238,17 +238,17 @@ def main():
 
     elif timenc == "00":
     #at 07:00
-        wind_06 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_06 = interpolate_new(hour_wind[0, :, :])
+        wind_00 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[0, :, :])
     #at 13:00
-        wind_12 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[6, :, :])
+        wind_06 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[6, :, :])
     #at 19:00
-        wind_18 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[12, :, :])
+        wind_12 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[12, :, :])
     #next day at 01:00
-        wind_00 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_00 = interpolate_new(hour_wind[18, :, :])
+        wind_18 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_00_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_06_1500m", today)
@@ -257,17 +257,17 @@ def main():
 
     elif timenc == "06":
         #at 13:00
-        wind_12 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[0, :, :])
+        wind_06 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[0, :, :])
         #at 19:00
-        wind_18 = interpolate_new(total_wind[6, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[6, :, :])
+        wind_12 = interpolate_new(total_wind[6, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[6, :, :])
         #next day 01:00
-        wind_00 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_00 = interpolate_new(hour_wind[12, :, :])
+        wind_18 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_18 = interpolate_new(hour_wind[12, :, :])
         #next day 07:00
-        wind_06 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_06 = interpolate_new(hour_wind[18, :, :])
+        wind_00 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_06_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_12_1500m", today)
@@ -276,17 +276,17 @@ def main():
 
     elif timenc == "12":
         #at 19:00
-        wind_18 = interpolate_new(total_wind[0, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[0, :, :])
+        wind_12 = interpolate_new(total_wind[0, :, :])
+        hour_wind_intp_12 = interpolate_new(hour_wind[0, :, :])
         #next day 01:00
-        wind_00 = interpolate_new(total_wind[6, :, :])
+        wind_18 = interpolate_new(total_wind[6, :, :])
         hour_wind_intp_18 = interpolate_new(hour_wind[6, :, :])
         #next day 07:00
-        wind_06 = interpolate_new(total_wind[12, :, :])
-        hour_wind_intp_12 = interpolate_new(hour_wind[12, :, :])
+        wind_00 = interpolate_new(total_wind[12, :, :])
+        hour_wind_intp_00 = interpolate_new(hour_wind[12, :, :])
         #next day 13:00
-        wind_12 = interpolate_new(total_wind[18, :, :])
-        hour_wind_intp_18 = interpolate_new(hour_wind[18, :, :])
+        wind_06 = interpolate_new(total_wind[18, :, :])
+        hour_wind_intp_06 = interpolate_new(hour_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_12_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_18_1500m", tomorrow)
@@ -370,13 +370,13 @@ def main():
                              "cardinal direction",
                              'Prevailing wind direction last 24h', wind_dir_intp)
         ncfile.add_variable('wind_00', wind_00.dtype.str, "m s-1",
-                             'Wind forecast 01:00', hour_wind_intp_00)
+                             'Wind forecast 01:00', wind_00)
         ncfile.add_variable('wind_06', wind_06.dtype.str, "m s-1",
-                             'Wind forecast 07:00', hour_wind_intp_06)
+                             'Wind forecast 07:00', wind_06)
         ncfile.add_variable('wind_12', wind_12.dtype.str, "m s-1",
-                             'Wind forecast 13:00', hour_wind_intp_12)
+                             'Wind forecast 13:00', wind_12)
         ncfile.add_variable('wind_18', wind_18.dtype.str, "m s-1",
-                             'Wind forecast 19:00', hour_wind_intp_18)
+                             'Wind forecast 19:00', wind_18)
 
         ncfile.close()
 
