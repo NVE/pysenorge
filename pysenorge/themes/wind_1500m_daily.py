@@ -219,64 +219,52 @@ def main():
 #--------------------------------------------------------
     #Hourly wind forecast based on the recent AROME input file
     if timenc == "18":
-    #at 01:00
-        wind_18 = interpolate_new(total_wind[0, :, :])
-    #at 07:00
-        wind_00 = interpolate_new(total_wind[6, :, :])
-    #at 13:00
-        wind_06 = interpolate_new(total_wind[12, :, :])
-    #at 19:00
-        wind_12 = interpolate_new(total_wind[18, :, :])
-
-        outfile3 = '%s_%s' % ("wind_speed_18_1500m", today)
-        outfile4 = '%s_%s' % ("wind_speed_00_1500m", today)
-        outfile5 = '%s_%s' % ("wind_speed_06_1500m", today)
-        outfile6 = '%s_%s' % ("wind_speed_12_1500m", today)
-
-    elif timenc == "00":
-    #at 07:00
+    #at model run at 18:00
         wind_00 = interpolate_new(total_wind[0, :, :])
-    #at 13:00
         wind_06 = interpolate_new(total_wind[6, :, :])
-    #at 19:00
         wind_12 = interpolate_new(total_wind[12, :, :])
-    #next day at 01:00
         wind_18 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_00_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_06_1500m", today)
         outfile5 = '%s_%s' % ("wind_speed_12_1500m", today)
-        outfile6 = '%s_%s' % ("wind_speed_18_1500m", tomorrow)
+        outfile6 = '%s_%s' % ("wind_speed_18_1500m", today)
 
-    elif timenc == "06":
-        #at 13:00
+    elif timenc == "00":
+        #model run at 00:00
         wind_06 = interpolate_new(total_wind[0, :, :])
-        #at 19:00
         wind_12 = interpolate_new(total_wind[6, :, :])
-        #next day 01:00
         wind_18 = interpolate_new(total_wind[12, :, :])
-        #next day 07:00
         wind_00 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_06_1500m", today)
         outfile4 = '%s_%s' % ("wind_speed_12_1500m", today)
-        outfile5 = '%s_%s' % ("wind_speed_18_1500m", tomorrow)
+        outfile5 = '%s_%s' % ("wind_speed_18_1500m", today)
         outfile6 = '%s_%s' % ("wind_speed_00_1500m", tomorrow)
 
-    elif timenc == "12":
-        #at 19:00
+    elif timenc == "06":
+        #model run at 06:00
         wind_12 = interpolate_new(total_wind[0, :, :])
-        #next day 01:00
         wind_18 = interpolate_new(total_wind[6, :, :])
-        #next day 07:00
         wind_00 = interpolate_new(total_wind[12, :, :])
-        #next day 13:00
         wind_06 = interpolate_new(total_wind[18, :, :])
 
         outfile3 = '%s_%s' % ("wind_speed_12_1500m", today)
-        outfile4 = '%s_%s' % ("wind_speed_18_1500m", tomorrow)
+        outfile4 = '%s_%s' % ("wind_speed_18_1500m", today)
         outfile5 = '%s_%s' % ("wind_speed_00_1500m", tomorrow)
         outfile6 = '%s_%s' % ("wind_speed_06_1500m", tomorrow)
+
+    elif timenc == "12":
+        #model run fat 12:00
+        wind_18 = interpolate_new(total_wind[0, :, :])
+        wind_00 = interpolate_new(total_wind[6, :, :])
+        wind_06 = interpolate_new(total_wind[12, :, :])
+        wind_12 = interpolate_new(total_wind[18, :, :])
+
+        outfile3 = '%s_%s' % ("wind_speed_18_1500m", today)
+        outfile4 = '%s_%s' % ("wind_speed_00_1500m", tomorrow)
+        outfile5 = '%s_%s' % ("wind_speed_06_1500m", tomorrow)
+        outfile6 = '%s_%s' % ("wind_speed_12_1500m", tomorrow)
 
 #---------------------------------------------------------
     #Option --bil: Multiplied by 10 to store data as integer
@@ -347,24 +335,22 @@ def main():
 
         ncfile.new(wind_time[-1])
 
-        ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str,
-                            "m s-1", 'Average wind speed last 24h',
-                            total_wind_avg_intp)
+        ncfile.add_variable('avg_wind_speed', total_wind_avg.dtype.str, "m s-1",
+                             'Average wind speed last 24h', total_wind_avg_intp)
         ncfile.add_variable('max_wind_speed', max_wind.dtype.str, "m s-1",
-                            'Maximum wind gust last 24h',
-                            max_wind_intp)
+                             'Maximum wind gust last 24h', max_wind_intp)
         ncfile.add_variable('wind_direction', wind_dir_cat.dtype.str,
-                            "cardinal direction",
-                            'Prevailing wind direction last 24h',
-                            wind_dir_intp)
+                             "cardinal direction",
+                             'Prevailing wind direction last 24h',
+                              wind_dir_intp)
         ncfile.add_variable('wind_00', wind_00.dtype.str, "m s-1",
-                            'Wind forecast 01:00', wind_00)
+                             'Wind forecast 00:00', wind_00)
         ncfile.add_variable('wind_06', wind_06.dtype.str, "m s-1",
-                            'Wind forecast 07:00', wind_06)
+                             'Wind forecast 06:00', wind_06)
         ncfile.add_variable('wind_12', wind_12.dtype.str, "m s-1",
-                            'Wind forecast 13:00', wind_12)
+                             'Wind forecast 12:00', wind_12)
         ncfile.add_variable('wind_18', wind_18.dtype.str, "m s-1",
-                            'Wind forecast 19:00', wind_18)
+                             'Wind forecast 18:00', wind_18)
 
         ncfile.close()
 
