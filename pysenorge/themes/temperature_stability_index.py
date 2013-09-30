@@ -136,9 +136,9 @@ def main():
     outfile = themedir + '_' + load_date
     outdir = os.path.join(BILout, themedir, str(get_hydroyear(cdt)),
                           outfile)
-    if not os.path.exists(outdir):
-        if not os.path.exists(os.path.join(BILout, themedir,
-                                           str(get_hydroyear(cdt)))):
+    if not os.path.exists(os.path.join(BILout, themedir,
+                                       str(get_hydroyear(cdt)))):
+        if not os.path.exists(os.path.join(BILout, themedir,)):
             os.chdir(BILout)
             os.makedirs(themedir)
         os.chdir(os.path.join(BILout, themedir))
