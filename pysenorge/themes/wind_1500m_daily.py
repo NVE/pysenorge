@@ -83,9 +83,6 @@ def main():
     themedir1 = 'wind_speed_avg_1500m'
     themedir2 = 'wind_speed_max_1500m'
 
-    today = datetime.date.today().strftime("%Y_%m_%d")
-    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y_%m_%d")
-
     # Setup input parser
     usage = "usage: python //~HOME/pysenorge/theme_layers/ \
             average_windspeed_daily.py YYYY-MM-DD NC-File-Describtion [options]"
@@ -120,6 +117,8 @@ def main():
     timearg = args[1]
 
     load_date = "%s_%s_%s" % (yr, mon, day)
+    tomorrow = (datetime.date(int(yr), int(mon), int(day)) +
+                datetime.timedelta(days=1)).strftime("%Y_%m_%d")
 
     ncfilename = "AROME_WIND_850_NVE_%s_%s.nc" % (timearg, load_date)
     ncfile = os.path.join(netCDFin, yr, ncfilename)
@@ -154,8 +153,8 @@ def main():
 
     print "For the period from the", begin_time, "to", end_time
 
-    outfile1 = '%s_%s' % (themedir1, today)
-    outfile2 = '%s_%s' % (themedir2, today)
+    outfile1 = '%s_%s' % (themedir1, load_date)
+    outfile2 = '%s_%s' % (themedir2, load_date)
 
     cdt = iso2datetime(args[0] + " 06:00:00")
 
@@ -225,10 +224,10 @@ def main():
         wind_12 = interpolate_new(total_wind[12, :, :])
         wind_18 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_00_1500m", today)
-        outfile4 = '%s_%s' % ("wind_speed_06_1500m", today)
-        outfile5 = '%s_%s' % ("wind_speed_12_1500m", today)
-        outfile6 = '%s_%s' % ("wind_speed_18_1500m", today)
+        outfile3 = '%s_%s' % ("wind_speed_00_1500m", load_date)
+        outfile4 = '%s_%s' % ("wind_speed_06_1500m", load_date)
+        outfile5 = '%s_%s' % ("wind_speed_12_1500m", load_date)
+        outfile6 = '%s_%s' % ("wind_speed_18_1500m", load_date)
 
     elif timenc == "00":
         #model run at 00:00
@@ -237,9 +236,9 @@ def main():
         wind_18 = interpolate_new(total_wind[12, :, :])
         wind_00 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_06_1500m", today)
-        outfile4 = '%s_%s' % ("wind_speed_12_1500m", today)
-        outfile5 = '%s_%s' % ("wind_speed_18_1500m", today)
+        outfile3 = '%s_%s' % ("wind_speed_06_1500m", load_date)
+        outfile4 = '%s_%s' % ("wind_speed_12_1500m", load_date)
+        outfile5 = '%s_%s' % ("wind_speed_18_1500m", load_date)
         outfile6 = '%s_%s' % ("wind_speed_00_1500m", tomorrow)
 
     elif timenc == "06":
@@ -249,8 +248,8 @@ def main():
         wind_00 = interpolate_new(total_wind[12, :, :])
         wind_06 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_12_1500m", today)
-        outfile4 = '%s_%s' % ("wind_speed_18_1500m", today)
+        outfile3 = '%s_%s' % ("wind_speed_12_1500m", load_date)
+        outfile4 = '%s_%s' % ("wind_speed_18_1500m", load_date)
         outfile5 = '%s_%s' % ("wind_speed_00_1500m", tomorrow)
         outfile6 = '%s_%s' % ("wind_speed_06_1500m", tomorrow)
 
@@ -261,7 +260,7 @@ def main():
         wind_06 = interpolate_new(total_wind[12, :, :])
         wind_12 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_18_1500m", today)
+        outfile3 = '%s_%s' % ("wind_speed_18_1500m", load_date)
         outfile4 = '%s_%s' % ("wind_speed_00_1500m", tomorrow)
         outfile5 = '%s_%s' % ("wind_speed_06_1500m", tomorrow)
         outfile6 = '%s_%s' % ("wind_speed_12_1500m", tomorrow)
