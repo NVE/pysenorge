@@ -158,7 +158,7 @@ def main():
 
     # Import snow-depth map
     sdfilename = "sdfsw_%s.bil" % load_date
-    sdfile = os.path.join(BILout, sdfilename)
+    sdfile = os.path.join(BILout, "sdfsw", str(get_hydroyear(cdt)), sdfilename)
 
     if not os.path.exists(sdfile):
         parser.error("BIL file %s containing snow-depth data does not exist!" % \
