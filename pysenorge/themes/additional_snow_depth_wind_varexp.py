@@ -202,13 +202,14 @@ def main():
 
     # Setup outputs
     outfile = themedir + '_' + load_date
-    outdir = os.path.join(options.outdir, str(get_hydroyear(cdt)))
+    outdir = os.path.join(BILout, themedir,
+                          str(get_hydroyear(cdt)))
     if not os.path.exists(outdir):
-        if not os.path.exists(options.outdir):
+        if not os.path.exists(os.path.join(BILout, themedir)):
             os.chdir(BILout)
-            os.system('mkdir %s' % themedir)
+            os.makedirs(themedir)
         os.chdir(options.outdir)
-        os.system('mkdir %s' % str(get_hydroyear(cdt)))
+        os.makedirs(str(get_hydroyear(cdt)))
 
     #Run additional-snow map model
     Hwind = model(wind.data, sd.data, lwc.data, age.data, frz.idex)
