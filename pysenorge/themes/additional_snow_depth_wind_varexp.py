@@ -193,11 +193,12 @@ def main():
     #Calculate and import frozen-snow map
     try:
         frz = frozen_snow.frozen()
+        ssttmfilename = "ssttm_%s.bil" % load_date
         frz.load_data(os.path.join(BILout, "ssttm", str(get_hydroyear(cdt)),
-                                   "ssttm_2013_01_13.bil"))
-        frz_val = frz.check_value(frz.tsi)
+                                   ssttmfilename))
+        frz.check_value(frz.tsi)
     except (IOError, NameError):
-        print "Couldn't import frozen-snow map!\
+        print "Couldn't import frozen-snow map!\n \
                The path or the file doesn't exist"
 
     # Setup outputs
@@ -212,7 +213,7 @@ def main():
         os.makedirs(str(get_hydroyear(cdt)))
 
     #Run additional-snow map model
-    Hwind = model(wind.data, sd.data, lwc.data, age.data, frz_val)
+    Hwind = model(wind.data, sd.data, lwc.data, age.data, frz.idex)
 
     # Set no-data values to UintFillValue
     mask = senorge_mask()
