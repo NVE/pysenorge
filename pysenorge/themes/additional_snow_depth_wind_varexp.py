@@ -18,8 +18,7 @@ execfile(os.path.join(os.path.dirname(__file__), "set_pysenorge_path.py"))
 from numpy import flipud, float32, zeros_like, uint16, clip
 # Own
 from pysenorge.set_environment import BILout, UintFillValue
-from pysenorge.tools.date_converters import datetime2BILdate, iso2datetime,\
-                                            get_hydroyear
+from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.io.bil import BILdata
 from pysenorge.grid import senorge_mask
 from pysenorge.functions import frozen_snow  # added in latest version
@@ -34,23 +33,23 @@ def model(u, nsd, lwc, age, frz):
     event the additional loading in lee slopes is calculated. Snow drift of already
     deposited snow is not taken into account at the moment. Also frozen snow is not going to be 
     transported unless there new snow has fallen.
-    
+
     The threshold wind speed (|Ut|) depends on the friction between the snow surface and
     air. Li & Pomeroy (1997) proposed an empirical relationship based on 2 m air
-    temperature. They found minimum threshold wind speeds of 4 m |s-1| for dry snow 
+    temperature. They found minimum threshold wind speeds of 4 m |s-1| for dry snow
     and a 7 m |s-1| for wet snow over the Canadian praire.
 
     Only the hours of wind speeds above |Ut| should be considered. The hours the
     wind speed is larger than |Ut| and the time since the last snowfall need to be
-    considered since they substantially influence the amount of snow that is 
+    considered since they substantially influence the amount of snow that is
     available for transport.
-    Short periods of high wind speeds shortly after snow fall will transport more 
-    snow than calm winds over old, well settled snow. 
+    Short periods of high wind speeds shortly after snow fall will transport more
+    snow than calm winds over old, well settled snow.
 
     **References:**
-        - Foehn, P. M. B. (1980). Snow transport over mountain crests. Journal 
+        - Foehn, P. M. B. (1980). Snow transport over mountain crests. Journal
           of Glaciology, 26(94).
-        - Meister, R., Influence of strong winds on snow distribution and avalanche 
+        - Meister, R., Influence of strong winds on snow distribution and avalanche
           activity, Ann. Glac., 13, pp.195-201, 1989 
         - Schweizer, J. (2003). Snow avalanche formation. Reviews of Geophysics, 41(4)
 
@@ -84,7 +83,7 @@ def model(u, nsd, lwc, age, frz):
                             #lead to weaker snow transport due to increased sublimation.
     k = 8e-5                # [s3 d-1 m-2]
     mask = age_old * lwc_dry  # reduced transport for dry, old snow
-    Hwind[mask] = k * uc[mask]**2  # correction by Gauer (2001)
+    Hwind[mask] = k * uc[mask] ** 2  # correction by Gauer (2001)
 
     #Added at the latest version of additonal-snow map
     Hwind[frz] = 0  # Setting value to 0 where frozen snow occur
@@ -113,7 +112,8 @@ def main():
     themename = ''
 
     # Setup input parser
-    usage = "usage: python //~HOME/pysenorge/themes/additional_snow_depth.py YYYY-MM-DD [options]"
+    usage = "usage: python //~HOME/pysenorge/themes/additional_snow_depth.py\
+             YYYY-MM-DD [options]"
 
     parser = OptionParser(usage=usage)
 
@@ -134,9 +134,15 @@ def main():
 
     # Get current datetime
     cdt = iso2datetime(args[0] + " 06:00:00")
-    windfilename = "wind_speed_avg_1500m_%s.bil" % datetime2BILdate(cdt)
+    ob_date = args[0].split("-")
+    dd = ob_date[2]
+    mm = ob_date[1]
+    yy = ob_date[0]
+    load_date = "%s_%s_%s" % (yy, mm, dd)
 
+    #--------------------------------------------------------------------------
     # Import wind-speed 1500m map
+    windfilename = "wind_speed_avg_1500m_%s.bil" % load_date
     windfile = os.path.join(BILout, "wind_speed_avg_1500m",
                             str(get_hydroyear(cdt)), windfilename)
 
@@ -148,23 +154,21 @@ def main():
         wind = BILdata(windfile, 'uint16')
         wind.read()
         # convert to Celsius
-        wind.data = float32(wind.data) * 0.1  # multiplyed by 0.1 because of in integer values in wind_model
+        wind.data = float32(wind.data) * 0.1   # 0.1 because integer values in bil
 
-    #--------------------------------------------------------------------------
-    #import snow-depth map
-    sdfilename = "sdfsw_%s.bil" % datetime2BILdate(cdt)
+    # Import snow-depth map
+    sdfilename = "sdfsw_%s.bil" % load_date
     sdfile = os.path.join(BILout, sdfilename)
 
     if not os.path.exists(sdfile):
-        parser.error("BIL file %s containing snow-depth data does not exist!" %\
+        parser.error("BIL file %s containing snow-depth data does not exist!" % \
                      sdfile)
     else:
         sd = BILdata(sdfile, 'uint16')
         sd.read()
 
-    #--------------------------------------------------------------------------
-    #import snow-age map
-    agefilename = "age_%s.bil" % datetime2BILdate(cdt)
+    # Import snow-age map
+    agefilename = "age_%s.bil" % load_date
     agefile = os.path.join(BILout, "age", str(get_hydroyear(cdt)), agefilename)
 
     if not os.path.exists(agefile):
@@ -174,9 +178,8 @@ def main():
         age = BILdata(agefile, 'uint8')
         age.read()
 
-    #--------------------------------------------------------------------------
-    #import liquid-water-content map
-    lwcfilename = "lwc_%s.bil" % datetime2BILdate(cdt)
+    # Import liquid-water-content map
+    lwcfilename = "lwc_%s.bil" % load_date
     lwcfile = os.path.join(BILout, "lwc", str(get_hydroyear(cdt)), lwcfilename)
 
     if not os.path.exists(lwcfile):
@@ -190,13 +193,15 @@ def main():
     #Calculate and import frozen-snow map
     try:
         frz = frozen_snow.frozen()
-        frz.load_data(os.path.join(BILout, "ssttm_2013_01_13.bil"))
+        frz.load_data(os.path.join(BILout, "ssttm", str(get_hydroyear(cdt)),
+                                   "ssttm_2013_01_13.bil"))
         frz.check_value(frz.tsi)
     except (IOError, NameError):
-        print "Couldn't import frozen-snow map"
+        print "Couldn't import frozen-snow map!\
+               The path or the file doesn't exist"
 
     # Setup outputs
-    outfile = themedir+'_'+datetime2BILdate(cdt)
+    outfile = themedir + '_' + load_date
     outdir = os.path.join(options.outdir, str(get_hydroyear(cdt)))
     if not os.path.exists(outdir):
         if not os.path.exists(options.outdir):
@@ -204,48 +209,40 @@ def main():
             os.system('mkdir %s' % themedir)
         os.chdir(options.outdir)
         os.system('mkdir %s' % str(get_hydroyear(cdt)))
-    
+
     #Run additional-snow map model
     Hwind = model(wind.data, sd.data, lwc.data, age.data, frz.idex)
-    
+
     # Set no-data values to UintFillValue
     mask = senorge_mask()
     Hwind[mask] = UintFillValue
-    
+
     #Option create bil-file
     if options.bil:
         # Write to BIL file
-        bilfile = BILdata(os.path.join(outdir, outfile+'.bil'),
+        bilfile = BILdata(os.path.join(outdir, outfile + '.bil'),
                           datatype='uint16')
-        Hwind = uint16(Hwind*1000)
+        Hwind = uint16(Hwind * 1000)
         Hwind[mask] = UintFillValue
-        
+
         biltext = bilfile.write(Hwind)
         print biltext
-    
+
     #Option create nc-file
     if options.nc:
         from pysenorge.io.nc import NCdata
         # Prepare data
-        # Change array order 
+        # Change array order
         ncHwind = flipud(Hwind)
         # Write to NC file
-        ncfile = NCdata(os.path.join(outdir, outfile+'.nc'))
+        ncfile = NCdata(os.path.join(outdir, outfile + '.nc'))
         ncfile.zip = True
         ncfile.add_variable(themedir, ncHwind.dtype.str, "m",
                             themename, ncHwind)
         ncfile.close()
-    
-    #Option create png imagefile
-    if options.png:
-        from pysenorge.io.png import writePNG
-        # Write to PNG file
-        writePNG(flipud(Hwind), os.path.join(outdir, outfile),
-                 cltfile=os.path.join("/home/ralf/Dokumente/summerjob/data/additional_snow_depth_wind.clt")
-                 )
-        
+
     # At last - cross fingers it all worked out!
     print "\n*** Finished successfully ***\n"
-    
+
 if __name__ == '__main__':
     main()

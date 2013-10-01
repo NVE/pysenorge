@@ -71,10 +71,10 @@ def main():
     # Theme variables
     themedir = 'tmgr'
     themename = 'Temperature gradient last 24h'
-    
+
     # Setup input parser
     usage = "usage: python //~HOME/pysenorge/themes/temperature_gradient_daily.py tm_TODAY.bil tm_YESTERDAY.bil [options]"
-    
+
     parser = OptionParser(usage=usage)
     parser.add_option("-o", "--outdir", 
                       action="store", dest="outdir", type="string",
@@ -93,14 +93,14 @@ def main():
     parser.print_help()
 
     (options, args) = parser.parse_args()
-    
+
     yy, mm, dd = get_date_filename(args[0])
     yy_range = arange(1950, 2050)
-    
+
     # Verify input parameters
     if int(yy) not in yy_range:
         parser.error("Could not determine year from file name.")
-    
+
     if len(args) != 2:
         parser.error("Please provide two input files!")
         parser.print_help() 
