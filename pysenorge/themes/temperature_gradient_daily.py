@@ -120,9 +120,9 @@ def main():
     file_path = os.path.join(METdir, "tm", yr)
 
     # Import of tmfile from yesterday and today
-    if not os.path.exists(os.path(file_path, todayfile)):
+    if not os.path.exists(os.path.join(file_path, todayfile)):
         print "tm file from today doesn't exist or path is not correct"
-    elif not os.path.exists(os.path(file_path, todayfile)):
+    elif not os.path.exists(os.path.join(file_path, todayfile)):
         print "tm file from yesterday doesn't exist or path is not correct"
     else:
         # Import todays data
