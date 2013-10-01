@@ -126,10 +126,10 @@ def main():
         print "tm file from yesterday doesn't exist or path is not correct"
     else:
         # Import todays data
-        today = BILdata(todayfile, 'uint16')
+        today = BILdata(os.path.join(file_path, todayfile), 'uint16')
         today.read()
         # Import yesterdays data
-        yesterday = BILdata(yesterdayfile, 'uint16')
+        yesterday = BILdata(os.path.join(file_path, yesterdayfile), 'uint16')
         yesterday.read()
 
     # Calculate temperature gradient
