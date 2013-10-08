@@ -175,6 +175,7 @@ def main():
         themedir1 = "wind_speed_1500m_avg_00"
         themedir2 = "wind_speed_1500m_max_00"
         themedir3 = "wind_speed_1500m_direction_00"
+        themedir_direction = "wind_direction_1500m_00"
 
         outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
         outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
@@ -200,6 +201,7 @@ def main():
         themedir1 = "wind_speed_1500m_avg_06"
         themedir2 = "wind_speed_1500m_max_06"
         themedir3 = "wind_speed_1500m_direction_06"
+        themedir_direction = "wind_direction_1500m_06"
 
         outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
         outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
@@ -226,6 +228,7 @@ def main():
         themedir1 = "wind_speed_1500m_avg_12"
         themedir2 = "wind_speed_1500m_max_12"
         themedir3 = "wind_speed_1500m_direction_12"
+        themedir_direction = "wind_direction_1500m_12"
 
         outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
         outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
@@ -251,6 +254,7 @@ def main():
         themedir1 = "wind_speed_1500m_avg_18"
         themedir2 = "wind_speed_1500m_max_18"
         themedir3 = "wind_speed_1500m_direction_18"
+        themedir_direction = "wind_direction_1500m_18"
 
         outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
         outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
@@ -290,12 +294,12 @@ def main():
         os.makedirs('%s' % str(get_hydroyear(cdt)))
 
     # Output path wind_speed_1500m_direction
-    outdir3 = os.path.join(BILout, themedir3, str(get_hydroyear(cdt)))
+    outdir3 = os.path.join(BILout, themedir_direction, str(get_hydroyear(cdt)))
     if not os.path.exists(outdir3):
-        if not os.path.exists(os.path.join(BILout, themedir3)):
+        if not os.path.exists(os.path.join(BILout, themedir_direction)):
             os.chdir(BILout)
-            os.makedirs('%s' % themedir3)
-        os.chdir(os.path.join(BILout, themedir3))
+            os.makedirs('%s' % themedir_direction)
+        os.chdir(os.path.join(BILout, themedir_direction))
         os.makedirs('%s' % str(get_hydroyear(cdt)))
 
     #Output path 4 to 7 hour_wind_speed
