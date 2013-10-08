@@ -18,6 +18,7 @@ Contains the paths to the standard input/output folders and values used in L{pys
 
 @author: kmu
 @since: 16. aug. 2010
+@changed: RL on the 8.10.2013
 '''
 
 #Build in modules
@@ -32,7 +33,7 @@ if sys.platform == 'linux2':
 
     BILout = '/hdata/grid/snowsim/'
 
-    netCDFin = '/hdata/grid/metdata/prognosis/harmonie/wind/netcdf/'
+    netCDFin = '/hdata/grid/metdata/prognosis/arome/wind/netcdf/'
 
     netCDFout = '/hdata/grid/snowsim/'
 
