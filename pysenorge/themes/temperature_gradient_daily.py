@@ -23,10 +23,6 @@ Command line usage
 the next day. In Norway that corresponds to 08:00 to 08:00 during the summer time and
 07:00-07:00 during winter (normal) time.
 
-@todo: Check that days are only one day apart
-(will depend on filename convention).
-@todo: Check that today is later than yesterday
-(will depend on filename convention).
 @todo: Once metadata is available as from netCDF,
 units can be verified, too.
 
@@ -41,6 +37,7 @@ units can be verified, too.
 @todo: ensure corect netCDF output
 @todo: use date2num instead of date2epoch
 '''
+
 # Built-in
 import os
 import datetime
@@ -129,11 +126,11 @@ def main():
         today = BILdata(os.path.join(file_path, todayfile), 'uint16')
         today.read()
         # Import yesterdays data
-        yesterday = BILdata(os.path.join(file_path, yesterdayfile), 'uint16')
-        yesterday.read()
+        ob_yesterday = BILdata(os.path.join(file_path, yesterdayfile), 'uint16')
+        ob_yesterday.read()
 
     # Calculate temperature gradient
-    tmgr = int16(model(float32(today.data), float32(yesterday.data)))
+    tmgr = int16(model(float32(today.data), float32(ob_yesterday.data)))
 
     # Set no-data values to IntFillValue
     mask = senorge_mask()
@@ -142,19 +139,19 @@ def main():
 
     # Setup outputs
     outfile = themedir + '_' + load_date + ".bil"
-    outdir = os.path.join(BILout, "tmgr", str(get_hydroyear(cdt)))
+    outdir = os.path.join(BILout, themedir, str(get_hydroyear(cdt)))
 
-    if not os.path.exists(os.path.join(outdir)):
-        if not os.path.exists(outdir):
+    if not os.path.exists(outdir):
+        if not os.path.exists(os.path.join(BILout, themedir)):
             os.chdir(BILout)
             os.makedirs(themedir)
-        os.chdir(outdir)
+        os.chdir(os.path.join(BILout, themedir))
         os.makedirs(str(get_hydroyear(cdt)))
 
     if options.bil:
         # Write to BIL file
         bilfile = BILdata(os.path.join(outdir, outfile), datatype='int16')
-        biltext = bilfile.write(tmgr)
+        biltext = bilfile.write(tmgr * 10)
         print biltext
 
     if options.nc:

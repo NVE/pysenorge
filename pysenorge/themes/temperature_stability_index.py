@@ -145,8 +145,7 @@ def main():
         os.makedirs(str(get_hydroyear(cdt)))
 
     # Write to BIL file
-    bilfile = BILdata(outdir,
-                          datatype="uint16")
+    bilfile = BILdata(outdir, datatype="uint16")
     biltext = bilfile.write(ssttm)
     print biltext
 

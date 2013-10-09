@@ -142,8 +142,8 @@ def main():
 
     #--------------------------------------------------------------------------
     # Import wind-speed 1500m map
-    windfilename = "wind_speed_avg_1500m_%s.bil" % load_date
-    windfile = os.path.join(BILout, "wind_speed_avg_1500m",
+    windfilename = "wind_speed_1500m_avg_00_%s.bil" % load_date
+    windfile = os.path.join(BILout, "wind_speed_avg_1500m_00",
                             str(get_hydroyear(cdt)), windfilename)
 
     if not os.path.exists(windfile):
@@ -189,8 +189,7 @@ def main():
         lwc = BILdata(lwcfile, 'uint8')
         lwc.read()
 
-    #--------------------------------------------------------------------------
-    #Calculate and import frozen-snow map
+    # Import frozen-snow map
     try:
         frz = frozen_snow.frozen()
         ssttmfilename = "ssttm_%s.bil" % load_date
