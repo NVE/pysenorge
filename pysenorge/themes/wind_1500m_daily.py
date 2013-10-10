@@ -244,10 +244,10 @@ def main():
         wind_00 = interpolate_new(total_wind[12, :, :])
         wind_06 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_1500m_12", load_date)
-        outfile4 = '%s_%s' % ("wind_speed_1500m_18", load_date)
-        outfile5 = '%s_%s' % ("wind_speed_1500m_00", tomorrow)
-        outfile6 = '%s_%s' % ("wind_speed_1500m_06", tomorrow)
+        outfile4 = '%s_%s' % ("wind_speed_1500m_12", load_date)
+        outfile5 = '%s_%s' % ("wind_speed_1500m_18", load_date)
+        outfile6 = '%s_%s' % ("wind_speed_1500m_00", tomorrow)
+        outfile7 = '%s_%s' % ("wind_speed_1500m_06", tomorrow)
 
     # Arome 12 start time 18:00
     elif timenc == "12":
@@ -306,9 +306,9 @@ def main():
     if not os.path.exists(outdir_hour):
         if not os.path.exists(os.path.join(BILout, themedir4)):
             os.chdir(BILout)
-            os.makedirs('%s' % str(get_hydroyear(cdt)))
-        os.chdir(os.path.join(BILout, str(get_hydroyear(cdt))))
-        os.makedirs('%s/%s/' % (load_date, timenc))
+            os.makedirs('%s' % themedir4)
+        os.chdir(os.path.join(BILout, themedir4))
+        os.makedirs('%s' % str(get_hydroyear(cdt)))
 
 #---------------------------------------------------------
     #Option --bil: Multiplied by 10 to store data as integer
@@ -326,7 +326,7 @@ def main():
         biltext = bilfile.write(bil_avg_wind.flatten())
         print biltext
 
-        # Wind_speed_1500m_direction
+        # Wind_speed_1500m_max
         bil_max_wind = flipud(uint16(max_wind_intp * 10.0))
         bil_max_wind[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir2,
