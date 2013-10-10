@@ -5,7 +5,7 @@ Created on 23.09.2013
 '''
 
 #Get timenc
-def time_fun(ob_time):
+def _time_fun(ob_time):
     if ob_time == "07":
         timenc = "00"
     elif ob_time == "13":

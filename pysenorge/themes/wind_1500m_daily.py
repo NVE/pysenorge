@@ -68,7 +68,7 @@ from pysenorge.tools.date_converters import iso2datetime, get_hydroyear
 from pysenorge.converters import nan2fill
 from pysenorge.grid import interpolate_new
 from pysenorge.functions.wind_model import model
-from pysenorge.tools.get_timenc import time_fun
+from pysenorge.tools.get_timenc import _time_fun
 
 
 #---------------------------------------------------------
@@ -134,7 +134,7 @@ def main():
 
     #Get timenc and control if the time is right
     ob_time = time.strftime("%H", time.gmtime(wind_time[0]))
-    timenc = time_fun(ob_time)
+    timenc = _time_fun(ob_time)
     if timearg == timenc:
         pass
     else:
@@ -177,9 +177,9 @@ def main():
         themedir3 = "wind_speed_1500m_direction_00"
         themedir_direction = "wind_direction_1500m_00"
 
-        outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
-        outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
-        outfile3 = '%s_%s_%s' % (themedir3, timenc, output_date)
+        outfile1 = '%s_%s' % (themedir1, output_date)
+        outfile2 = '%s_%s' % (themedir2, output_date)
+        outfile3 = '%s_%s' % (themedir3, output_date)
 
         #Hourly wind forecast based on the recent AROME input file
         themedir4 = "wind_speed_1500m_00"
@@ -191,10 +191,10 @@ def main():
         wind_12 = interpolate_new(total_wind[12, :, :])
         wind_18 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_1500m_00", load_date)
-        outfile4 = '%s_%s' % ("wind_speed_1500m_06", load_date)
-        outfile5 = '%s_%s' % ("wind_speed_1500m_12", load_date)
-        outfile6 = '%s_%s' % ("wind_speed_1500m_18", load_date)
+        outfile4 = '%s_%s' % ("wind_speed_1500m_00", load_date)
+        outfile5 = '%s_%s' % ("wind_speed_1500m_06", load_date)
+        outfile6 = '%s_%s' % ("wind_speed_1500m_12", load_date)
+        outfile7 = '%s_%s' % ("wind_speed_1500m_18", load_date)
 
     # Arome 00 start time 06:00
     elif timenc == "00":
@@ -203,9 +203,9 @@ def main():
         themedir3 = "wind_speed_1500m_direction_06"
         themedir_direction = "wind_direction_1500m_06"
 
-        outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
-        outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
-        outfile3 = '%s_%s_%s' % (themedir3, timenc, output_date)
+        outfile1 = '%s_%s' % (themedir1, output_date)
+        outfile2 = '%s_%s' % (themedir2, output_date)
+        outfile3 = '%s_%s' % (themedir3, output_date)
 
         #Hourly wind forecast based on the recent AROME input file
         themedir4 = "wind_speed_1500m_06"
@@ -218,10 +218,10 @@ def main():
         wind_18 = interpolate_new(total_wind[12, :, :])
         wind_00 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_1500m_06", load_date)
-        outfile4 = '%s_%s' % ("wind_speed_1500m_12", load_date)
-        outfile5 = '%s_%s' % ("wind_speed_1500m_18", load_date)
-        outfile6 = '%s_%s' % ("wind_speed_1500m_00", tomorrow)
+        outfile4 = '%s_%s' % ("wind_speed_1500m_06", load_date)
+        outfile5 = '%s_%s' % ("wind_speed_1500m_12", load_date)
+        outfile6 = '%s_%s' % ("wind_speed_1500m_18", load_date)
+        outfile7 = '%s_%s' % ("wind_speed_1500m_00", tomorrow)
 
     # Arome 06 start time 12:00
     elif timenc == "06":
@@ -230,9 +230,9 @@ def main():
         themedir3 = "wind_speed_1500m_direction_12"
         themedir_direction = "wind_direction_1500m_12"
 
-        outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
-        outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
-        outfile3 = '%s_%s_%s' % (themedir3, timenc, output_date)
+        outfile1 = '%s_%s' % (themedir1, output_date)
+        outfile2 = '%s_%s' % (themedir2, output_date)
+        outfile3 = '%s_%s' % (themedir3, output_date)
 
         #Hourly wind forecast based on the recent AROME input file
         themedir4 = "wind_speed_1500m_12"
@@ -256,9 +256,9 @@ def main():
         themedir3 = "wind_speed_1500m_direction_18"
         themedir_direction = "wind_direction_1500m_18"
 
-        outfile1 = '%s_%s_%s' % (themedir1, timenc, output_date)
-        outfile2 = '%s_%s_%s' % (themedir2, timenc, output_date)
-        outfile3 = '%s_%s_%s' % (themedir3, timenc, output_date)
+        outfile1 = '%s_%s' % (themedir1, output_date)
+        outfile2 = '%s_%s' % (themedir2, output_date)
+        outfile3 = '%s_%s' % (themedir3, output_date)
 
         #Hourly wind forecast based on the recent AROME input File
         themedir4 = "wind_speed_1500m_18"
@@ -270,10 +270,10 @@ def main():
         wind_06 = interpolate_new(total_wind[12, :, :])
         wind_12 = interpolate_new(total_wind[18, :, :])
 
-        outfile3 = '%s_%s' % ("wind_speed_1500m_18", load_date)
-        outfile4 = '%s_%s' % ("wind_speed_1500m_12", tomorrow)
-        outfile5 = '%s_%s' % ("wind_speed_1500m_06", tomorrow)
-        outfile6 = '%s_%s' % ("wind_speed_1500m_00", tomorrow)
+        outfile4 = '%s_%s' % ("wind_speed_1500m_18", load_date)
+        outfile5 = '%s_%s' % ("wind_speed_1500m_12", tomorrow)
+        outfile6 = '%s_%s' % ("wind_speed_1500m_06", tomorrow)
+        outfile7 = '%s_%s' % ("wind_speed_1500m_00", tomorrow)
 
     # Output path wind_speed_1500m_avg
     outdir1 = os.path.join(BILout, themedir1, str(get_hydroyear(cdt)))
@@ -348,7 +348,7 @@ def main():
         bil_wind_00 = flipud(uint16(wind_00 * 10.0))
         bil_wind_00[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile3 + '.bil'),
+                          outfile4 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_00.flatten())
         print biltext
@@ -357,7 +357,7 @@ def main():
         bil_wind_06 = flipud(uint16(wind_06 * 10.0))
         bil_wind_06[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile4 + '.bil'),
+                          outfile5 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_06.flatten())
         print biltext
@@ -366,7 +366,7 @@ def main():
         bil_wind_12 = flipud(uint16(wind_12 * 10.0))
         bil_wind_12[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile5 + '.bil'),
+                          outfile6 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_12.flatten())
         print biltext
@@ -375,7 +375,7 @@ def main():
         bil_wind_18 = flipud(uint16(wind_18 * 10.0))
         bil_wind_18[mask] = UintFillValue
         bilfile = BILdata(os.path.join(outdir_hour,
-                          outfile6 + '.bil'),
+                          outfile7 + '.bil'),
                           datatype='uint16')
         biltext = bilfile.write(bil_wind_18.flatten())
         print biltext
