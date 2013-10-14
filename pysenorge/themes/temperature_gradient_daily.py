@@ -114,7 +114,7 @@ def main():
 
     todayfile = "tm_%s.bil" % load_date
     yesterdayfile = "tm_%s.bil" % yesterday
-    file_path = os.path.join(METdir, "tm", yr)
+    file_path = os.path.join(METdir, "tm", get_hydroyear(cdt))
 
     # Import of tmfile from yesterday and today
     if not os.path.exists(os.path.join(file_path, todayfile)):
