@@ -49,7 +49,6 @@ def model(tm, tmgr, nodata_mask):
     '''
     ssttm = zeros(tmgr.shape, dtype=uint16)
     dims = tmgr.shape
-    print tmgr.shape
     for i in xrange(dims[0]):
         for j in xrange(dims[1]):
             if nodata_mask[i][j] == False:  # only consider values that contain data
@@ -59,7 +58,6 @@ def model(tm, tmgr, nodata_mask):
                     ssttm[i][j] = 2  # increased stability
                 elif tm[i][j] < -2.0 and tmgr[i][j] > 5.0:
                     ssttm[i][j] = 3  # decreased stability
-                    print tmgr[i][j]
                 elif tm[i][j] < -2.0 and tmgr[i][j] > 10.0:
                     ssttm[i][j] = 4  # drastically decreased stability
                 else:
