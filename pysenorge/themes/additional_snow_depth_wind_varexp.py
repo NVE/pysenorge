@@ -31,7 +31,7 @@ def model(u, nsd, lwc, age, frz):
     in lee slopes per day to the third power of the daily average wind speed u
     (u<=20 m |s-1|). The model is only valid for blowing snow. For each new snow 
     event the additional loading in lee slopes is calculated. Snow drift of already
-    deposited snow is not taken into account at the moment. Also frozen snow is not going to be 
+    deposited snow is not taken into account at the moment. Frozen snow is not going to be 
     transported unless there new snow has fallen.
 
     The threshold wind speed (|Ut|) depends on the friction between the snow surface and
