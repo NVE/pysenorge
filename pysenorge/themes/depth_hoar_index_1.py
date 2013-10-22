@@ -143,7 +143,7 @@ def main():
     tmfile = os.path.join(METdir, "tm", str(cdt.year), tmfilename)
     # Load_path sd bil file
     sdfilename = "sd_%s.bil" % load_date
-    sdfile = os.path.join(METdir, "sd", str(get_hydroyear(cdt)), sdfilename)
+    sdfile = os.path.join(BILout, "sd", str(get_hydroyear(cdt)), sdfilename)
     # Load_path yesterdays depth hoar index file
     tgssfilename = "%s_%s.bil" % (themedir, yesterday)
     tgssfile = os.path.join(BILout, themedir, str(get_hydroyear(cdt)),
