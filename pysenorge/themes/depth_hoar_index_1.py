@@ -1,3 +1,4 @@
+# -*- coding:iso-8859-10 -*-
 __docformat__ = 'reStructuredText'
 '''
 Akkumulert temperaturgradient i snødekket (indikatorkart)
