@@ -143,7 +143,7 @@ def main():
     #--------------------------------------------------------------------------
     # Import wind-speed 1500m map
     windfilename = "wind_speed_1500m_avg_%s_00.bil" % load_date
-    windfile = os.path.join(BILout, "wind_speed_1500m_avg_00",
+    windfile = os.path.join(BILout, "wind_speed_1500m_avg_06",
                             str(get_hydroyear(cdt)), windfilename)
 
     if not os.path.exists(windfile):
