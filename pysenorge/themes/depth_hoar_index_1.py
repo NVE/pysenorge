@@ -134,7 +134,7 @@ def main():
     #create a date variable out of input
     load_date = "%s_%s_%s" % (yr, mon, day)
     yesterday = (datetime.date(int(yr), int(mon), int(day)) -
-                datetime.datetime.timedelta(days=1)).strftime("%Y_%m_%d")
+                datetime.timedelta(days=1)).strftime("%Y_%m_%d")
 
     cdt = iso2datetime(args[0] + " 06:00:00")
 
