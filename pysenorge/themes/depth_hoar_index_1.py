@@ -1,4 +1,3 @@
-# -*- coding:iso-8859-10 -*-
 __docformat__ = 'reStructuredText'
 '''
 Akkumulert temperaturgradient i snødekket (indikatorkart)
@@ -42,8 +41,8 @@ try: # for future purpose
 except ImportError:
     pass # Error message will be delivered by IO module!
 # Own
-from pysenorge.set_environment import METdir, PROGdir, BILin, BILout, \
-                                        IntFillValue, timeunit
+from pysenorge.set_environment import METdir, PROGdir, BILout, \
+                                        IntFillValue
 from pysenorge.io.bil import BILdata
 from pysenorge.tools.date_converters import datetime2BILdate, iso2datetime,\
                                             get_hydroyear
