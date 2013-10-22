@@ -184,7 +184,7 @@ def main():
     # Setup outputs
     outfile = themedir + '_' + load_date
 
-    outdir = os.path.join(BILin, "depth_hoar_index_1", str(get_hydroyear(cdt)))
+    outdir = os.path.join(BILout, "depth_hoar_index_1", str(get_hydroyear(cdt)))
 
     if not os.path.exists(outdir):
         if not os.path.exists(options.outdir):
